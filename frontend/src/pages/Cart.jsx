@@ -30,32 +30,53 @@ const Cart = () => {
   }, [cartItems, products])
 
   return (
-    <div className='border-t pt-14'>
+    <div className='border-t border-white/10 pt-14 text-white'>
 
-      <div className=' text-2xl mb-3'>
+      <div className='text-2xl mb-6'>
         <Title text1={'YOUR'} text2={'CART'} />
       </div>
 
-      <div>
+      <div className='flex flex-col gap-4'>
         {
           cartData.map((item, index) => {
 
             const productData = products.find((product) => product._id === item._id);
 
             return (
-              <div key={index} className='py-4 border-t border-b text-gray-700 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4'>
-                <div className=' flex items-start gap-6'>
-                  <img className='w-16 sm:w-20' src={productData.image[0]} alt="" />
+              <div 
+                key={index} 
+                className='bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 sm:p-6 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4 shadow-lg transition-all duration-300 hover:bg-white/10'
+              >
+                {/* Product Left Info */}
+                <div className='flex items-center gap-6'>
+                  <img className='w-16 sm:w-20 rounded-xl object-cover border border-white/10' src={productData.image[0]} alt={productData.name} />
                   <div>
-                    <p className='text-xs sm:text-lg font-medium'>{productData.name}</p>
-                    <div className='flex items-center gap-5 mt-2'>
-                      <p>{currency}{productData.price}</p>
-                      <p className='px-2 sm:px-3 sm:py-1 border bg-slate-50'>{item.size}</p>
+                    <p className='text-sm sm:text-lg font-medium text-white'>{productData.name}</p>
+                    <div className='flex items-center gap-4 mt-2'>
+                      <p className='text-base font-bold text-white'>{currency}{productData.price}</p>
+                      <p className='px-3 py-1 border border-white/20 bg-white/10 rounded-lg text-xs sm:text-sm text-gray-200'>{item.size}</p>
                     </div>
                   </div>
                 </div>
-                <input onChange={(e) => e.target.value === '' || e.target.value === '0' ? null : updateQuantity(item._id, item.size, Number(e.target.value))} className='border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1' type="number" min={1} defaultValue={item.quantity} />
-                <img onClick={() => updateQuantity(item._id, item.size, 0)} className='w-4 mr-4 sm:w-5 cursor-pointer' src={assets.bin_icon} alt="" />
+
+                {/* Quantity Input */}
+                <input 
+                  onChange={(e) => e.target.value === '' || e.target.value === '0' ? null : updateQuantity(item._id, item.size, Number(e.target.value))} 
+                  className='bg-transparent border border-white/20 rounded-xl max-w-14 sm:max-w-20 px-2 py-1 text-white text-center focus:outline-none focus:border-white/50' 
+                  type="number" 
+                  min={1} 
+                  defaultValue={item.quantity} 
+                />
+
+                {/* Delete / Bin Icon */}
+                <div className='flex justify-end pr-2 sm:pr-4'>
+                  <img 
+                    onClick={() => updateQuantity(item._id, item.size, 0)} 
+                    className='w-5 sm:w-6 cursor-pointer filter invert opacity-70 hover:opacity-100 transition-opacity duration-300' 
+                    src={assets.bin_icon} 
+                    alt="Remove" 
+                  />
+                </div>
               </div>
             )
 
@@ -63,15 +84,20 @@ const Cart = () => {
         }
       </div>
 
-      <div className='flex justify-end my-20'>
+     <div className='flex justify-end my-20'>
         <div className='w-full sm:w-[450px]'>
           <CartTotal />
-          <div className=' w-full text-end'>
-            <button onClick={() => navigate('/place-order')} className='bg-black text-green-500 text-sm my-8 px-8 py-3'>PROCEED TO CHECKOUT</button>
+          <div className='w-full text-end mt-8'>
+            <button 
+              onClick={() => navigate('/place-order')} 
+              className='bg-white text-black font-semibold text-sm tracking-wide px-10 py-3 rounded-full hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-in-out shadow-lg'
+            >
+              PROCEED TO CHECKOUT
+            </button>
           </div>
         </div>
       </div>
-
+      
     </div>
   )
 }

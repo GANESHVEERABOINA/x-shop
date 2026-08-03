@@ -4,30 +4,38 @@ import Title from './Title';
 
 const CartTotal = () => {
 
-    const {currency,delivery_fee,getCartAmount} = useContext(ShopContext);
+    const {currency, delivery_fee, getCartAmount} = useContext(ShopContext);
 
   return (
-    <div className='w-full'>
-      <div className='text-2xl'>
+    <div className='w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl'>
+      
+      <div className='text-2xl mb-6'>
         <Title text1={'CART'} text2={'TOTALS'} />
       </div>
 
-      <div className='flex flex-col gap-2 mt-2 text-sm'>
-            <div className='flex justify-between'>
-                <p>Subtotal</p>
-                <p>{currency} {getCartAmount()}.00</p>
+      <div className='flex flex-col gap-4 text-sm sm:text-base'>
+            <div className='flex justify-between items-center transition-all hover:pl-1 duration-300'>
+                <p className='text-gray-400'>Subtotal</p>
+                <p className='text-white font-medium tracking-wide'>{currency} {getCartAmount()}.00</p>
             </div>
-            <hr />
-            <div className='flex justify-between'>
-                <p>Shipping Fee</p>
-                <p>{currency} {delivery_fee}.00</p>
+            
+            <hr className='border-white/10' />
+            
+            <div className='flex justify-between items-center transition-all hover:pl-1 duration-300'>
+                <p className='text-gray-400'>Shipping Fee</p>
+                <p className='text-white font-medium tracking-wide'>{currency} {delivery_fee}.00</p>
             </div>
-            <hr />
-            <div className='flex justify-between'>
-                <b>Total</b>
-                <b>{currency} {getCartAmount() === 0 ? 0 : getCartAmount() + delivery_fee}.00</b>
+            
+            <hr className='border-white/10' />
+            
+            <div className='flex justify-between items-center pt-2'>
+                <b className='text-white text-lg font-semibold tracking-wide'>Total</b>
+                <b className='text-white text-xl tracking-wide'>
+                  {currency} {getCartAmount() === 0 ? 0 : getCartAmount() + delivery_fee}.00
+                </b>
             </div>
       </div>
+      
     </div>
   )
 }

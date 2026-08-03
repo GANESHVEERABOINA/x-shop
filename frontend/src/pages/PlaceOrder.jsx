@@ -125,30 +125,32 @@ const PlaceOrder = () => {
         }
     }
 
+    // Common input styling class for reuse
+    const inputStyle = 'w-full bg-transparent border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-white/50 focus:bg-white/5 transition-colors duration-300';
 
     return (
-        <form onSubmit={onSubmitHandler} className='flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t'>
+        <form onSubmit={onSubmitHandler} className='flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t border-white/10'>
             {/* ------------- Left Side ---------------- */}
-            <div className='flex flex-col gap-4 w-full sm:max-w-[480px]'>
+            <div className='flex flex-col gap-5 w-full sm:max-w-[480px]'>
 
                 <div className='text-xl sm:text-2xl my-3'>
                     <Title text1={'DELIVERY'} text2={'INFORMATION'} />
                 </div>
                 <div className='flex gap-3'>
-                    <input required onChange={onChangeHandler} name='firstName' value={formData.firstName} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="text" placeholder='First name' />
-                    <input required onChange={onChangeHandler} name='lastName' value={formData.lastName} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="text" placeholder='Last name' />
+                    <input required onChange={onChangeHandler} name='firstName' value={formData.firstName} className={inputStyle} type="text" placeholder='First name' />
+                    <input required onChange={onChangeHandler} name='lastName' value={formData.lastName} className={inputStyle} type="text" placeholder='Last name' />
                 </div>
-                <input required onChange={onChangeHandler} name='email' value={formData.email} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="email" placeholder='Email address' />
-                <input required onChange={onChangeHandler} name='street' value={formData.street} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="text" placeholder='Street' />
+                <input required onChange={onChangeHandler} name='email' value={formData.email} className={inputStyle} type="email" placeholder='Email address' />
+                <input required onChange={onChangeHandler} name='street' value={formData.street} className={inputStyle} type="text" placeholder='Street' />
                 <div className='flex gap-3'>
-                    <input required onChange={onChangeHandler} name='city' value={formData.city} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="text" placeholder='City' />
-                    <input onChange={onChangeHandler} name='state' value={formData.state} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="text" placeholder='State' />
+                    <input required onChange={onChangeHandler} name='city' value={formData.city} className={inputStyle} type="text" placeholder='City' />
+                    <input onChange={onChangeHandler} name='state' value={formData.state} className={inputStyle} type="text" placeholder='State' />
                 </div>
                 <div className='flex gap-3'>
-                    <input required onChange={onChangeHandler} name='zipcode' value={formData.zipcode} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="number" placeholder='Zipcode' />
-                    <input required onChange={onChangeHandler} name='country' value={formData.country} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="text" placeholder='Country' />
+                    <input required onChange={onChangeHandler} name='zipcode' value={formData.zipcode} className={inputStyle} type="number" placeholder='Zipcode' />
+                    <input required onChange={onChangeHandler} name='country' value={formData.country} className={inputStyle} type="text" placeholder='Country' />
                 </div>
-                <input required onChange={onChangeHandler} name='phone' value={formData.phone} className='border border-gray-300 rounded py-1.5 px-3.5 w-full' type="number" placeholder='Phone' />
+                <input required onChange={onChangeHandler} name='phone' value={formData.phone} className={inputStyle} type="number" placeholder='Phone' />
             </div>
 
             {/* ------------- Right Side ------------------ */}
@@ -161,23 +163,39 @@ const PlaceOrder = () => {
                 <div className='mt-12'>
                     <Title text1={'PAYMENT'} text2={'METHOD'} />
                     {/* --------------- Payment Method Selection ------------- */}
-                    <div className='flex gap-3 flex-col lg:flex-row'>
-                        <div onClick={() => setMethod('stripe')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
-                            <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'stripe' ? 'bg-green-400' : ''}`}></p>
-                            <img className='h-5 mx-4' src={assets.stripe_logo} alt="" />
+                    <div className='flex gap-4 flex-col lg:flex-row'>
+                        <div 
+                          onClick={() => setMethod('stripe')} 
+                          className={`flex items-center gap-3 border rounded-xl p-3 cursor-pointer transition-all duration-300 ${method === 'stripe' ? 'bg-white/10 border-white/40 shadow-[0_0_10px_rgba(255,255,255,0.05)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                        >
+                            <p className={`min-w-4 h-4 border rounded-full transition-colors duration-300 ${method === 'stripe' ? 'bg-white border-white' : 'border-gray-500'}`}></p>
+                            <img className='h-5 mx-4 object-contain filter invert opacity-90' src={assets.stripe_logo} alt="Stripe" />
                         </div>
-                        <div onClick={() => setMethod('razorpay')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
-                            <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'razorpay' ? 'bg-green-400' : ''}`}></p>
-                            <img className='h-5 mx-4' src={assets.razorpay_logo} alt="" />
+                        
+                        <div 
+                          onClick={() => setMethod('razorpay')} 
+                          className={`flex items-center gap-3 border rounded-xl p-3 cursor-pointer transition-all duration-300 ${method === 'razorpay' ? 'bg-white/10 border-white/40 shadow-[0_0_10px_rgba(255,255,255,0.05)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                        >
+                            <p className={`min-w-4 h-4 border rounded-full transition-colors duration-300 ${method === 'razorpay' ? 'bg-white border-white' : 'border-gray-500'}`}></p>
+                            <img className='h-5 mx-4 object-contain' src={assets.razorpay_logo} alt="Razorpay" />
                         </div>
-                        <div onClick={() => setMethod('cod')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
-                            <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'cod' ? 'bg-green-400' : ''}`}></p>
-                            <p className='text-gray-500 text-sm font-medium mx-4'>CASH ON DELIVERY</p>
+
+                        <div 
+                          onClick={() => setMethod('cod')} 
+                          className={`flex items-center gap-3 border rounded-xl p-3 cursor-pointer transition-all duration-300 ${method === 'cod' ? 'bg-white/10 border-white/40 shadow-[0_0_10px_rgba(255,255,255,0.05)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                        >
+                            <p className={`min-w-4 h-4 border rounded-full transition-colors duration-300 ${method === 'cod' ? 'bg-white border-white' : 'border-gray-500'}`}></p>
+                            <p className={`text-sm font-medium mx-4 tracking-wide transition-colors ${method === 'cod' ? 'text-white' : 'text-gray-400'}`}>CASH ON DELIVERY</p>
                         </div>
                     </div>
 
-                    <div className='w-full text-end mt-8'>
-                        <button type='submit' className='bg-black text-white px-16 py-3 text-sm'>PLACE ORDER</button>
+                    <div className='w-full text-end mt-10'>
+                        <button 
+                          type='submit' 
+                          className='bg-white text-black font-semibold text-sm tracking-wide px-12 py-3 rounded-full hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-in-out shadow-lg'
+                        >
+                            PLACE ORDER
+                        </button>
                     </div>
                 </div>
             </div>
