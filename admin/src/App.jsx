@@ -6,6 +6,7 @@ import Add from './pages/Add'
 import List from './pages/List'
 import Orders from './pages/Orders'
 import Login from './components/Login'
+import Dashboard from './pages/Dashboard';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -21,17 +22,21 @@ const App = () => {
   },[token])
 
   return (
-    <div className='bg-black min-h-screen text-white'>
+    // bg-black badulu bg-[#13131A] pettanu premium look kosam
+    <div className='bg-[#13131A] min-h-screen text-white'>
       <ToastContainer position="bottom-right" theme="dark" />
       {token === ""
         ? <Login setToken={setToken} />
         : <>
           <Navbar setToken={setToken} />
-          <hr className='border-white/10' />
+          <hr className='border-white/5' />
           <div className='flex w-full'>
             <Sidebar />
-            <div className='w-[70%] mx-auto ml-[max(5vw,25px)] my-8 text-gray-200 text-base'>
+            
+            {/* Width ni flex-1 ki marchanu so space correct ga theeskuntundi */}
+            <div className='flex-1 mx-auto ml-[max(2vw,15px)] my-8 pr-4 sm:pr-8 text-gray-200 text-base'>
               <Routes>
+                <Route path='/' element={<Dashboard token={token} />} />
                 <Route path='/add' element={<Add token={token} />} />
                 <Route path='/list' element={<List token={token} />} />
                 <Route path='/orders' element={<Orders token={token} />} />

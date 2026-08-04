@@ -86,4 +86,20 @@ const singleProduct = async (req, res) => {
     }
 }
 
-export { listProducts, addProduct, removeProduct, singleProduct }
+// --- KOTHAGA ADD CHESINA FUNCTION (For Price Update) ---
+const updateProductPrice = async (req, res) => {
+    try {
+        const { id, price } = req.body;
+
+        // MongoDB lo price update chestundi
+        await productModel.findByIdAndUpdate(id, { price: Number(price) });
+
+        res.json({ success: true, message: "Price updated successfully" });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+}
+
+// Chivarlo export lo updateProductPrice ni add chesanu chudandi
+export { listProducts, addProduct, removeProduct, singleProduct, updateProductPrice }
