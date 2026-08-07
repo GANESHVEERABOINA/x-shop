@@ -18,8 +18,8 @@ import Verify from "./pages/Verify";
 
 const App = () => {
   return (
-    <div className="min-h-screen bg-black text-white px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
-      {" "}
+    // Ikkada padding classes marchanu (px-[9vw] theesesi normal padding & w-full petta)
+    <div className="min-h-screen bg-black text-white px-4 sm:px-8 md:px-10 lg:px-12 w-full overflow-x-hidden">
       <ToastContainer />
       <Navbar />
       <SearchBar />

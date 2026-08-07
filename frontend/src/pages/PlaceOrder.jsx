@@ -11,15 +11,7 @@ const PlaceOrder = () => {
     const [method, setMethod] = useState('cod');
     const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        street: '',
-        city: '',
-        state: '',
-        zipcode: '',
-        country: '',
-        phone: ''
+        firstName: '', lastName: '', email: '', street: '', city: '', state: '', zipcode: '', country: '', phone: ''
     })
 
     const onChangeHandler = (event) => {
@@ -38,16 +30,13 @@ const PlaceOrder = () => {
             order_id: order.id,
             receipt: order.receipt,
             handler: async (response) => {
-                console.log(response)
                 try {
-                    
                     const { data } = await axios.post(backendUrl + '/api/order/verifyRazorpay',response,{headers:{token}})
                     if (data.success) {
                         navigate('/orders')
                         setCartItems({})
                     }
                 } catch (error) {
-                    console.log(error)
                     toast.error(error)
                 }
             }
@@ -58,10 +47,16 @@ const PlaceOrder = () => {
 
     const onSubmitHandler = async (event) => {
         event.preventDefault()
+
+        // --- NEW: Extra Security Check ---
+        if (!token) {
+            toast.error("Please login to place an order");
+            navigate('/login');
+            return null;
+        }
+
         try {
-
             let orderItems = []
-
             for (const items in cartItems) {
                 for (const item in cartItems[items]) {
                     if (cartItems[items][item] > 0) {
@@ -80,11 +75,8 @@ const PlaceOrder = () => {
                 items: orderItems,
                 amount: getCartAmount() + delivery_fee
             }
-            
 
             switch (method) {
-
-                // API Calls for COD
                 case 'cod':
                     const response = await axios.post(backendUrl + '/api/order/place',orderData,{headers:{token}})
                     if (response.data.success) {
@@ -94,7 +86,6 @@ const PlaceOrder = () => {
                         toast.error(response.data.message)
                     }
                     break;
-
                 case 'stripe':
                     const responseStripe = await axios.post(backendUrl + '/api/order/stripe',orderData,{headers:{token}})
                     if (responseStripe.data.success) {
@@ -104,28 +95,21 @@ const PlaceOrder = () => {
                         toast.error(responseStripe.data.message)
                     }
                     break;
-
                 case 'razorpay':
-
                     const responseRazorpay = await axios.post(backendUrl + '/api/order/razorpay', orderData, {headers:{token}})
                     if (responseRazorpay.data.success) {
                         initPay(responseRazorpay.data.order)
                     }
-
                     break;
-
                 default:
                     break;
             }
-
-
         } catch (error) {
             console.log(error)
             toast.error(error.message)
         }
     }
 
-    // Common input styling class for reuse
     const inputStyle = 'w-full bg-transparent border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-white/50 focus:bg-white/5 transition-colors duration-300';
 
     return (

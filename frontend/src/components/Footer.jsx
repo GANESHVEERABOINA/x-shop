@@ -44,7 +44,7 @@ const Footer = () => {
       <div className='mt-16'>
           <hr className='border-white/10' />
           <p className='py-6 text-sm text-center text-gray-400 tracking-wide'>
-            Copyright 2026@ xshop.com - All Right Reserved.
+            Copyright 2026@ X-shop.com - All Right Reserved.
           </p>
       </div>
 
