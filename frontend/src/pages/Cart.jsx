@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { ShopContext } from '../context/ShopContext'
-import Title from '../components/Title';
-import { assets } from '../assets/assets';
-import CartTotal from '../components/CartTotal';
-import { toast } from 'react-toastify';
+import Title from '../components/Title'
+import { assets } from '../assets/assets'
+import CartTotal from '../components/CartTotal'
+import AnimatedButton from '../components/ui/AnimatedButton'
+import { AnimatedNumber } from '../components/ui/AnimatedNumber'
 
 const Cart = () => {
-  const { products, currency, cartItems, updateQuantity, navigate, token } = useContext(ShopContext);
+  const { products, currency, cartItems, updateQuantity, navigate } = useContext(ShopContext);
   const [cartData, setCartData] = useState([]);
 
   useEffect(() => {
@@ -27,93 +28,98 @@ const Cart = () => {
     }
   }, [cartItems, products])
 
-  // --- Checkout Auth Check ---
-  const checkoutHandler = () => {
-    if (!token) {
-      toast.error("Please login to place an order!");
-      navigate('/login');
-    } else {
-      navigate('/place-order');
-    }
-  }
-
   return (
-    <div className='border-t border-white/10 pt-10 sm:pt-14 text-white min-h-[80vh]'>
-
+    <div className='border-t border-white/10 pt-14 text-white min-h-screen'>
+      
+      {/* Page Title */}
       <div className='text-2xl mb-8'>
         <Title text1={'YOUR'} text2={'CART'} />
       </div>
 
-      {/* --- Main Container: Divides screen into 2 columns --- */}
-      <div className='flex flex-col lg:flex-row gap-10 xl:gap-14 items-start'>
+      {/* Main Container - Desktop lo Side-by-Side (lg:flex-row) */}
+      <div className='flex flex-col lg:flex-row gap-10 xl:gap-16 items-start'>
         
-        {/* ------------- LEFT SIDE: CART ITEMS ------------- */}
-        <div className='flex-1 flex flex-col gap-4 w-full'>
-          {cartData.length === 0 ? (
-             <div className='text-gray-400 py-10 text-center bg-white/5 rounded-2xl border border-white/10'>
-                Your cart is currently empty.
-             </div>
-          ) : (
-            cartData.map((item, index) => {
-              const productData = products.find((product) => product._id === item._id);
-              if (!productData) return null;
+        {/* ------------- Left Side (Cart Items List) ------------- */}
+        <div className='flex-1 w-full'>
+          {cartData.map((item, index) => {
+            const productData = products.find((product) => product._id === item._id);
 
-              return (
-                <div 
-                  key={index} 
-                  className='bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 sm:p-6 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4 shadow-lg transition-all duration-300 hover:bg-white/10'
-                >
-                  {/* Product Image & Info */}
-                  <div className='flex items-center gap-6'>
-                    <img className='w-16 sm:w-20 rounded-xl object-cover border border-white/10' src={productData.image[0]} alt={productData.name} />
-                    <div>
-                      <p className='text-sm sm:text-lg font-medium text-white'>{productData.name}</p>
-                      <div className='flex items-center gap-4 mt-2'>
-                        <p className='text-base font-bold text-white'>{currency}{productData.price}</p>
-                        <p className='px-3 py-1 border border-white/20 bg-white/10 rounded-lg text-xs sm:text-sm text-gray-200'>{item.size}</p>
-                      </div>
+            return (
+              <div 
+                key={index} 
+                className='py-5 px-6 border border-white/10 grid grid-cols-[4fr_1fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4 bg-[#13131A] rounded-2xl mb-5 shadow-lg transition-transform hover:shadow-2xl'
+              >
+                {/* Product Info */}
+                <div className='flex items-center gap-6'>
+                  <img className='w-16 sm:w-20 rounded-xl object-cover' src={productData.image[0]} alt="" />
+                  <div>
+                    <p className='text-sm sm:text-lg font-bold tracking-wide text-white'>{productData.name}</p>
+                    <div className='flex items-center gap-5 mt-3'>
+                      <p className='font-medium text-gray-300'>{currency}{productData.price}</p>
+                      <p className='px-3 py-1 border border-white/20 bg-white/5 rounded-md text-sm text-gray-300'>{item.size}</p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Quantity Input */}
-                  <input 
-                    onChange={(e) => e.target.value === '' || e.target.value === '0' ? null : updateQuantity(item._id, item.size, Number(e.target.value))} 
-                    className='bg-transparent border border-white/20 rounded-xl max-w-14 sm:max-w-20 px-2 py-1 text-white text-center focus:outline-none focus:border-white/50' 
-                    type="number" 
-                    min={1} 
-                    defaultValue={item.quantity} 
-                  />
-
-                  {/* Delete Button */}
-                  <div className='flex justify-end pr-2 sm:pr-4'>
-                    <img 
-                      onClick={() => updateQuantity(item._id, item.size, 0)} 
-                      className='w-5 sm:w-6 cursor-pointer filter invert opacity-70 hover:opacity-100 transition-opacity duration-300' 
-                      src={assets.bin_icon} 
-                      alt="Remove" 
-                    />
+                {/* Animated Quantity Selector */}
+                <div className="flex justify-center sm:justify-start">
+                  <div className="flex items-center gap-3 bg-[#1a1a1a] border border-white/20 rounded-xl px-3 py-1.5 w-max shadow-lg select-none">
+                    <button
+                      onClick={() => item.quantity > 1 ? updateQuantity(item._id, item.size, item.quantity - 1) : null}
+                      className={`text-2xl px-2 transition-colors active:scale-90 ${item.quantity > 1 ? 'text-gray-400 hover:text-white cursor-pointer' : 'text-gray-700 cursor-not-allowed'}`}
+                    >
+                      -
+                    </button>
+                    <div className="w-8 flex justify-center text-xl font-bold text-white">
+                      <AnimatedNumber value={item.quantity} />
+                    </div>
+                    <button
+                      onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
+                      className="text-2xl text-gray-400 hover:text-white px-2 cursor-pointer transition-colors active:scale-90"
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
-              )
-            })
+
+                {/* Delete Icon */}
+                <div className='flex justify-end'>
+                  <img 
+                    onClick={() => updateQuantity(item._id, item.size, 0)} 
+                    className='w-5 sm:w-6 cursor-pointer hover:scale-110 transition-transform opacity-60 hover:opacity-100 hover:invert' 
+                    src={assets.bin_icon} 
+                    alt="Delete" 
+                  />
+                </div>
+              </div>
+            )
+          })}
+          
+          {/* Cart Empty aythe choopinche text */}
+          {cartData.length === 0 && (
+            <div className="text-center text-gray-500 py-20 bg-[#13131A] border border-white/10 rounded-3xl">
+              Your cart is empty.
+            </div>
           )}
         </div>
 
-        {/* ------------- RIGHT SIDE: CART TOTALS ------------- */}
+        {/* ------------- Right Side (Cart Totals & Checkout) ------------- */}
+        {/* lg:w-[450px] valla width fix avuthundi, sticky top-24 valla kinda scroll ayina idi ikkade kanipisthundi */}
         {cartData.length > 0 && (
-          <div className='w-full lg:w-[400px] xl:w-[450px] shrink-0'>
-            {/* Sticky attribute to keep the total visible while scrolling items */}
-            <div className='sticky top-28'>
+          <div className='w-full lg:w-[400px] xl:w-[450px] shrink-0 sticky top-24'>
+            <div className='bg-[#13131A] border border-white/10 p-8 rounded-3xl shadow-xl'>
+              
               <CartTotal />
               
-              <div className='w-full mt-8'>
-                <button 
-                  onClick={checkoutHandler} 
-                  className='w-full bg-white text-black font-semibold text-sm tracking-widest px-10 py-4 rounded-xl hover:bg-gray-200 hover:scale-[1.02] transition-all duration-300 ease-in-out shadow-[0_0_20px_rgba(255,255,255,0.1)]'
+              <div className='w-full mt-8 flex justify-center lg:justify-end'>
+                <AnimatedButton 
+                  onClick={() => navigate('/place-order')} 
+                  className='bg-white text-black font-bold tracking-widest w-full'
                 >
-                  PROCEED TO CHECKOUT
-                </button>
+                    PROCEED TO CHECKOUT
+                </AnimatedButton>
               </div>
+
             </div>
           </div>
         )}
