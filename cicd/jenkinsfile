@@ -1,0 +1,26 @@
+pipeline{
+    agent any
+}
+stages{
+    stage('Clone Repository'){
+        steps{
+           sh 'git clone https://github.com/GANESHVEERABOINA/x-shop.git'
+        }
+    }
+    stage('change directory'){
+        steps{
+            sh 'cd x-shop'
+            sh 'cd admin/'
+        }
+    }
+    stage('Build'){
+        steps{
+            sh 'docker build -t admin:latest .'
+        }
+    }
+    stage('Run'){
+        steps{
+            sh 'docker run -d -p 8081:80 admin:latest'
+        }
+    }
+}
