@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent{
+        label 'aws-agent-1'
+    }
 
     stages {
         stage('Clone git repo') {
