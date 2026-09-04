@@ -7,6 +7,6 @@ COPY . .
 RUN npm run build
 #stage 2
 FROM nginxinc/nginx-unprivileged:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /FRONTEND/dist /usr/share/nginx/html
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
