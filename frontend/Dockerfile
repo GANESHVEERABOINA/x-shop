@@ -1,6 +1,6 @@
 #stage 1
 FROM node:18-slim AS builder
-WORKDIR /app
+WORKDIR /FRONTEND
 COPY package*.json ./
 RUN npm install
 COPY . .
