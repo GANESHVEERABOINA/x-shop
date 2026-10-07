@@ -10,7 +10,7 @@ import Dashboard from './pages/Dashboard';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-export const backendUrl = import.meta.env.VITE_BACKEND_URL
+export const backendUrl = 'http://x-shop.local'
 export const currency = '₹'
 
 const App = () => {
