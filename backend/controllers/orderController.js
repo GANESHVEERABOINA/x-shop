@@ -8,12 +8,18 @@ const currency = 'inr'
 const deliveryCharge = 50
 
 // gateway initialize
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+const stripeKey = process.env.STRIPE_SECRET_KEY
+const stripe = stripeKey?.startsWith('sk_') ? new Stripe(stripeKey) : null
 
-const razorpayInstance = new razorpay({
-    key_id : process.env.RAZORPAY_KEY_ID,
-    key_secret : process.env.RAZORPAY_KEY_SECRET,
-})
+const razorpayReady = Boolean(
+    process.env.RAZORPAY_KEY_ID?.startsWith('rzp_') &&
+    process.env.RAZORPAY_KEY_SECRET &&
+    !process.env.RAZORPAY_KEY_SECRET.toLowerCase().includes('paste')
+)
+const razorpayInstance = razorpayReady ? new razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+}) : null
 
 // Placing orders using COD Method
 const placeOrder = async (req,res) => {
@@ -49,6 +55,9 @@ const placeOrder = async (req,res) => {
 
 // Placing orders using Stripe Method
 const placeOrderStripe = async (req,res) => {
+    if (!stripe) {
+        return res.status(503).json({ success: false, message: 'Stripe payments are not configured for this environment.' })
+    }
     try {
         
         const { userId, items, amount, address} = req.body
@@ -128,6 +137,9 @@ const verifyStripe = async (req,res) => {
 
 // Placing orders using Razorpay Method
 const placeOrderRazorpay = async (req,res) => {
+    if (!razorpayInstance) {
+        return res.status(503).json({ success: false, message: 'Razorpay payments are not configured for this environment.' })
+    }
     try {
         
         const { userId, items, amount, address} = req.body
@@ -166,6 +178,9 @@ const placeOrderRazorpay = async (req,res) => {
 }
 
 const verifyRazorpay = async (req,res) => {
+    if (!razorpayInstance) {
+        return res.status(503).json({ success: false, message: 'Razorpay payments are not configured for this environment.' })
+    }
     try {
         
         const { userId, razorpay_order_id  } = req.body

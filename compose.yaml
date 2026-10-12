@@ -1,0 +1,109 @@
+name: x-shop
+
+services:
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-xshop}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in the root .env file}
+    volumes:
+      - xshop-mongo-data:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet
+          --username "$${MONGO_INITDB_ROOT_USERNAME}"
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}"
+          --authenticationDatabase admin
+          --eval 'db.adminCommand("ping").ok' | grep 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [xshop]
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: "4000"
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-xshop}:${MONGO_ROOT_PASSWORD}@mongo:27017/xshop?authSource=admin
+    depends_on:
+      mongo:
+        condition: service_healthy
+    expose:
+      - "4000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:4000/readyz')
+          .then(r => process.exit(r.ok ? 0 : 1))
+          .catch(() => process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [xshop]
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/healthz]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks: [xshop]
+
+  admin:
+    build:
+      context: ./admin
+    restart: unless-stopped
+    expose:
+      - "80"
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/healthz]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks: [xshop]
+
+  gateway:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${XSHOP_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+      admin:
+        condition: service_started
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/healthz]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks: [xshop]
+
+networks:
+  xshop:
+    driver: bridge
+
+volumes:
+  xshop-mongo-data:

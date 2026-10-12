@@ -10,7 +10,8 @@ import Dashboard from './pages/Dashboard';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-export const backendUrl = 'http://x-shop.local'
+// Same-origin /api is routed by Vite in development and Nginx in containers/Kubernetes.
+export const backendUrl = ''
 export const currency = '₹'
 
 const App = () => {

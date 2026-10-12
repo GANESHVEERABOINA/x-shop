@@ -1,6 +1,6 @@
-projectKey=my-first-project
+projectKey=x-shop
 serverUrl=http://localhost:9000
-serverVersion=26.8.0.126808
-dashboardUrl=http://localhost:9000/dashboard?id=my-first-project
-ceTaskId=2c114f45-ba0d-4c14-95aa-abe1557ed506
-ceTaskUrl=http://localhost:9000/api/ce/task?id=2c114f45-ba0d-4c14-95aa-abe1557ed506
+serverVersion=26.9.0.129388
+dashboardUrl=http://localhost:9000/dashboard?id=x-shop
+ceTaskId=29dafaa8-9d20-4fbc-908a-5c5dbf8bfc01
+ceTaskUrl=http://localhost:9000/api/ce/task?id=29dafaa8-9d20-4fbc-908a-5c5dbf8bfc01
