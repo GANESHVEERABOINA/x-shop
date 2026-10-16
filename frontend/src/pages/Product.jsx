@@ -1,187 +1,439 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { ShopContext } from "../context/ShopContext";
-import { assets } from "../assets/assets";
-import RelatedProducts from "../components/RelatedProducts";
-import AnimatedButton from "../components/ui/AnimatedButton";
-import { AnimatedNumber } from "../components/ui/AnimatedNumber"; // Kotha component import chesam
+import React, { useContext, useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { ShopContext } from '../context/ShopContext';
+import RelatedProducts from '../components/RelatedProducts';
+import { toast } from 'react-toastify';
 
 const Product = () => {
   const { productId } = useParams();
-  const { products, currency, addToCart, navigate } = useContext(ShopContext); 
-  const [productData, setProductData] = useState(false);
-  const [image, setImage] = useState("");
-  const [size, setSize] = useState("");
-  
-  // Quantity kosam kotha state add chesam (Default: 1)
-  const [quantity, setQuantity] = useState(1);
+  const { products, currency, addToCart, navigate } = useContext(ShopContext);
 
-  const fetchProductData = async () => {
-    products.map((item) => {
-      if (item._id === productId) {
-        setProductData(item);
-        setImage(item.image[0]);
-        return null;
-      }
-    });
-  };
+  const [productData, setProductData] = useState(null);
+  const [size, setSize] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [showOffers, setShowOffers] = useState(true);
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [selectedImageModal, setSelectedImageModal] = useState(null);
+  const [pincode, setPincode] = useState('');
+  const [deliveryMsg, setDeliveryMsg] = useState('');
 
   useEffect(() => {
-    fetchProductData();
+    const item = products.find((p) => p._id === productId);
+    if (item) {
+      setProductData(item);
+      setSize(item.sizes?.[0] || '');
+      setQuantity(1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [productId, products]);
 
-  // Quantity ni add/reduce chese functions
-  const increaseQuantity = () => setQuantity(prev => prev + 1);
-  const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+  if (!productData) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center text-gray-400">
+        Loading product details...
+      </div>
+    );
+  }
 
-  return productData ? (
-    <div className="border-t border-white/10 pt-10 transition-opacity ease-in duration-500 opacity-100 text-white">
-      <style>
-        {`
-          .hide-scrollbar::-webkit-scrollbar { display: none; }
-          .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        `}
-      </style>
+  // Flipkart-style price calculations
+  const sellingPrice = Number(productData.price) || 999;
+  const mrpPrice = Math.round(sellingPrice * 2.4);
+  const discountPercent = Math.round(((mrpPrice - sellingPrice) / mrpPrice) * 100);
+  const wowDealPrice = Math.max(sellingPrice - Math.round(sellingPrice * 0.08), 99);
 
-      <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
-        {/*---------- Product Images------------- */}
-        <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
-          <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full hide-scrollbar snap-x">
-            {productData.image.map((item, index) => (
-              <img
-                onClick={() => setImage(item)}
-                src={item}
+  // Handle Add to Cart with quantity
+  const handleAddToCart = () => {
+    if (!size) {
+      toast.error('Please select a size first!');
+      return;
+    }
+    for (let i = 0; i < quantity; i++) {
+      addToCart(productData._id, size);
+    }
+    toast.success('Added to cart!');
+  };
+
+  // Handle Buy Now
+  const handleBuyNow = () => {
+    if (!size) {
+      toast.error('Please select a size first!');
+      return;
+    }
+    for (let i = 0; i < quantity; i++) {
+      addToCart(productData._id, size);
+    }
+    navigate('/cart');
+  };
+
+  // Share button handler
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.info('Product link copied to clipboard!');
+  };
+
+  // Check Pincode handler
+  const handleCheckPincode = (e) => {
+    e.preventDefault();
+    if (pincode.length === 6 && !isNaN(pincode)) {
+      setDeliveryMsg('Free Delivery available by 3-4 Days • Cash on Delivery eligible');
+    } else {
+      setDeliveryMsg('Please enter a valid 6-digit pincode');
+    }
+  };
+
+  const images = Array.isArray(productData.image) ? productData.image : [productData.image];
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16 text-white">
+      {/* 1. Flipkart-Style Breadcrumbs */}
+      <nav className="text-xs sm:text-sm text-gray-400 mb-4 flex flex-wrap items-center gap-1.5">
+        <Link to="/" className="hover:text-white transition">Home</Link>
+        <span>/</span>
+        <Link to="/collection" className="hover:text-white transition">
+          {productData.category || 'Clothing'}
+        </Link>
+        <span>/</span>
+        <span className="text-gray-400">{productData.subCategory || 'Topwear'}</span>
+        <span>/</span>
+        <span className="text-gray-200 font-medium truncate max-w-[260px] sm:max-w-md">
+          {productData.name}
+        </span>
+      </nav>
+
+      {/* 2. Main Flipkart 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* LEFT COLUMN: Compact 2-Column Image Grid (7 Cols on Desktop) */}
+        <div className="lg:col-span-7 relative">
+          <div
+            className={`grid gap-3 ${
+              images.length === 1 ? 'grid-cols-1 max-w-[380px] mx-auto' : 'grid-cols-2'
+            }`}
+          >
+            {images.map((imgUrl, index) => (
+              <div
                 key={index}
-                className={`w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer rounded-xl transition-all duration-300 snap-center object-cover ${image === item ? "border-2 border-white opacity-100 shadow-[0_0_10px_rgba(255,255,255,0.2)]" : "opacity-50 hover:opacity-100 border border-white/10"}`}
-                alt="Thumbnail"
-              />
+                onClick={() => setSelectedImageModal(imgUrl)}
+                className="relative group bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden cursor-zoom-in h-[280px] sm:h-[350px] md:h-[380px]"
+              >
+                <img
+                  src={imgUrl}
+                  alt={`${productData.name} - view ${index + 1}`}
+                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                />
+
+                {/* Wishlist & Share Floating Icons on Top-Right Image */}
+                {index === (images.length > 1 ? 1 : 0) && (
+                  <div
+                    className="absolute top-3 right-3 flex flex-col gap-2.5 z-10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => setWishlisted(!wishlisted)}
+                      title="Wishlist"
+                      className="w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill={wishlisted ? '#ef4444' : 'none'}
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.8}
+                        stroke={wishlisted ? '#ef4444' : 'currentColor'}
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                        />
+                      </svg>
+                    </button>
+
+                    <button
+                      onClick={handleShare}
+                      title="Share"
+                      className="w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.8}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
-          </div>
-          <div className="w-full sm:w-[80%]">
-            <img
-              className="w-full h-auto rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.05)]"
-              src={image}
-              alt="Main Product"
-            />
           </div>
         </div>
 
-        {/* -------- Product Info ---------- */}
-        <div className="flex-1">
-          <h1 className="font-semibold text-2xl sm:text-3xl mt-2 tracking-wide">
-            {productData.name}
-          </h1>
-          <div className="flex items-center gap-1 mt-3">
-            <img src={assets.star_icon} alt="star" className="w-4" />
-            <img src={assets.star_icon} alt="star" className="w-4" />
-            <img src={assets.star_icon} alt="star" className="w-4" />
-            <img src={assets.star_icon} alt="star" className="w-4" />
-            <img src={assets.star_dull_icon} alt="star" className="w-4 opacity-50" />
-            <p className="pl-2 text-gray-400">(122)</p>
-          </div>
-          <p className="mt-5 text-3xl sm:text-4xl font-bold tracking-widest">
-            {currency}
-            {productData.price}
-          </p>
-          <p className="mt-5 text-gray-300 md:w-4/5 leading-relaxed">
-            {productData.description}
-          </p>
-
-          {/* ---------- Size Selector ---------- */}
-          <div className="flex flex-col gap-4 mt-8 mb-4">
-            <p className="text-gray-300 font-medium tracking-wide">Select Size</p>
-            <div className="flex gap-3">
-              {productData.sizes.map((item, index) => (
+        {/* RIGHT COLUMN: Flipkart-Style Product Details (5 Cols on Desktop, Sticky) */}
+        <div className="lg:col-span-5 lg:sticky lg:top-6 bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-5">
+          
+          {/* Size Selection at Top (Flipkart Style) */}
+          {productData.sizes && productData.sizes.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-sm font-semibold text-gray-200">Select Size</span>
                 <button
-                  onClick={() => setSize(item)}
-                  key={index}
-                  className={`w-12 h-12 flex items-center justify-center rounded-xl border transition-all duration-300 font-medium ${
-                    item === size
-                      ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-110"
-                      : "bg-white/5 text-gray-300 border-white/20 hover:bg-white/10 hover:border-white/50"
-                  }`}
+                  onClick={() => setShowSizeChart(true)}
+                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 underline cursor-pointer"
                 >
-                  {item}
+                  Size Chart
                 </button>
-              ))}
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                {productData.sizes.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSize(item)}
+                    className={`min-w-[48px] h-11 px-3.5 rounded-lg font-medium text-sm border transition-all ${
+                      item === size
+                        ? 'border-white bg-white text-black font-bold shadow-sm'
+                        : 'border-neutral-700 bg-neutral-900 text-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* Brand Store Link & Product Title */}
+          <div className="space-y-1.5">
+            <Link
+              to="/collection"
+              className="text-xs font-semibold text-blue-400 hover:underline inline-block"
+            >
+              Visit X-SHOP {productData.category} Store
+            </Link>
+            <h1 className="text-lg sm:text-xl font-semibold text-white leading-snug">
+              {productData.name}
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-400 line-clamp-2">
+              {productData.description}
+            </p>
           </div>
 
-          {/* ---------- Quantity Selector ---------- */}
-          <div className="flex flex-col gap-4 mb-8">
-            <p className="text-gray-300 font-medium tracking-wide">Quantity</p>
-            <div className="flex items-center gap-4 bg-[#1a1a1a] border border-white/20 rounded-xl px-4 py-2 w-max shadow-lg select-none">
-              <button onClick={decreaseQuantity} className="text-2xl text-gray-400 hover:text-white transition-colors px-2 cursor-pointer active:scale-90">
-                -
-              </button>
-              <div className="w-8 flex justify-center text-xl font-bold text-white">
-                <AnimatedNumber value={quantity} />
+          {/* Flipkart Rating Pill */}
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-700 px-2.5 py-1 rounded-md text-xs font-semibold">
+              <span className="text-white">4.2</span>
+              <span className="text-emerald-400">★</span>
+              <span className="text-neutral-600">|</span>
+              <span className="text-gray-300">1,248 Ratings</span>
+            </div>
+            {productData.bestseller && (
+              <span className="text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded">
+                Bestseller
+              </span>
+            )}
+          </div>
+
+          {/* Price & Discount Block */}
+          <div className="space-y-1.5 pt-1">
+            <span className="inline-block bg-emerald-600 text-white text-[11px] font-semibold px-2.5 py-0.5 rounded">
+              Lowest Price Live • Special Deal
+            </span>
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-emerald-400 font-bold text-xl sm:text-2xl">
+                ↓{discountPercent}%
+              </span>
+              <span className="text-gray-500 line-through text-lg">
+                {currency}{mrpPrice}
+              </span>
+              <span className="text-white font-bold text-2xl sm:text-3xl">
+                {currency}{sellingPrice}
+              </span>
+            </div>
+            <p className="text-[11px] text-gray-400">Inclusive of all taxes</p>
+          </div>
+
+          {/* Flipkart WOW! DEAL Box */}
+          <div className="rounded-xl overflow-hidden border border-indigo-500/30 bg-indigo-950/20">
+            <button
+              onClick={() => setShowOffers(!showOffers)}
+              className="w-full flex items-center justify-between bg-gradient-to-r from-indigo-700 to-blue-600 px-3.5 py-2.5 text-left"
+            >
+              <div className="flex items-center gap-2">
+                <span className="bg-black/30 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded leading-tight">
+                  WOW! DEAL
+                </span>
+                <span className="text-xs font-medium text-white">
+                  Apply offers for maximum savings
+                </span>
               </div>
-              <button onClick={increaseQuantity} className="text-2xl text-gray-400 hover:text-white transition-colors px-2 cursor-pointer active:scale-90">
+              <span className="text-white text-xs">{showOffers ? '▲' : '▼'}</span>
+            </button>
+
+            {showOffers && (
+              <div className="p-3.5 bg-neutral-900/90 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-white">
+                    Buy at {currency}{wowDealPrice}
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-medium">
+                    Extra 8% Instant Discount
+                  </span>
+                </div>
+                <ul className="text-xs text-gray-300 space-y-1">
+                  <li>• 5% Unlimited Cashback on Flipkart Axis & SBI Cards</li>
+                  <li>• Flat ₹50 off on first UPI transaction</li>
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Quantity Selector */}
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs font-medium text-gray-400">Quantity</span>
+            <div className="inline-flex items-center border border-neutral-700 rounded-lg bg-neutral-900">
+              <button
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="px-3 py-1 text-gray-300 hover:text-white text-base"
+              >
+                −
+              </button>
+              <span className="px-3 py-1 text-sm font-semibold">{quantity}</span>
+              <button
+                onClick={() => setQuantity((q) => q + 1)}
+                className="px-3 py-1 text-gray-300 hover:text-white text-base"
+              >
                 +
               </button>
             </div>
           </div>
 
-          {/* ---------- Add to Cart & Buy Now Buttons ---------- */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-2">
-            <AnimatedButton 
-              onClick={() => {
-                if (size) {
-                  // Enta quantity select chesthe anni sarlu add to cart trigger avuthundi
-                  for(let i=0; i<quantity; i++) addToCart(productData._id, size);
-                } else {
-                  addToCart(productData._id, size); 
-                }
-              }}
-              className="bg-transparent text-white border border-gray-500 hover:bg-white/10"
+          {/* Flipkart Side-by-Side Action Buttons */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <button
+              onClick={handleAddToCart}
+              className="w-full py-3 px-4 rounded-xl border border-neutral-600 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-sm transition cursor-pointer"
             >
-              ADD TO CART
-            </AnimatedButton>
-
-            <AnimatedButton 
-              onClick={() => {
-                if (size) {
-                  for(let i=0; i<quantity; i++) addToCart(productData._id, size);
-                  navigate('/cart'); 
-                } else {
-                  addToCart(productData._id, size); 
-                }
-              }}
-              className="bg-white text-black font-bold"
+              Add to cart
+            </button>
+            <button
+              onClick={handleBuyNow}
+              className="w-full py-3 px-4 rounded-xl bg-[#ffc200] hover:bg-[#ffcf33] text-black font-bold text-sm shadow-md transition cursor-pointer"
             >
-              BUY NOW
-            </AnimatedButton>
+              Buy at {currency}{sellingPrice}
+            </button>
           </div>
 
-          <hr className="mt-10 sm:w-4/5 border-white/10" />
+          {/* Delivery Pincode Checker */}
+          <div className="pt-3 border-t border-neutral-800 space-y-2">
+            <span className="text-xs font-semibold text-gray-300">Delivery Options</span>
+            <form onSubmit={handleCheckPincode} className="flex gap-2">
+              <input
+                type="text"
+                maxLength={6}
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                placeholder="Enter 6-digit Pincode"
+                className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+              />
+              <button
+                type="submit"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 px-3 py-1.5 bg-neutral-900 border border-neutral-700 rounded-lg"
+              >
+                Check
+              </button>
+            </form>
+            {deliveryMsg && (
+              <p className="text-xs text-emerald-400">{deliveryMsg}</p>
+            )}
+          </div>
 
-          <div className="text-sm text-gray-400 mt-6 flex flex-col gap-2 leading-relaxed">
-            <p>100% Original product.</p>
-            <p>Cash on delivery is available on this product.</p>
-            <p>Easy return and exchange policy within 7 days.</p>
+          {/* Trust & Return Policies */}
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-neutral-800 text-center text-[11px] text-gray-400">
+            <div className="bg-neutral-900/60 p-2 rounded-lg">
+              <p className="font-semibold text-gray-200">100% Original</p>
+              <p>Authentic Brand</p>
+            </div>
+            <div className="bg-neutral-900/60 p-2 rounded-lg">
+              <p className="font-semibold text-gray-200">Cash on Delivery</p>
+              <p>Pay at Doorstep</p>
+            </div>
+            <div className="bg-neutral-900/60 p-2 rounded-lg">
+              <p className="font-semibold text-gray-200">7 Days Return</p>
+              <p>Easy Exchange</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ---------- Description & Review Section ------------- */}
-      <div className="mt-20 bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="flex border-b border-white/10">
-          <b className="px-8 py-5 text-sm tracking-widest bg-white/10 text-white cursor-pointer">Description</b>
-          <p className="px-8 py-5 text-sm tracking-widest text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer transition-colors duration-300">Reviews (122)</p>
+      {/* Size Chart Popup Modal */}
+      {showSizeChart && (
+        <div
+          onClick={() => setShowSizeChart(false)}
+          className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-md w-full p-5 space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-base font-bold text-white">Standard Size Chart (Inches)</h3>
+              <button
+                onClick={() => setShowSizeChart(false)}
+                className="text-gray-400 hover:text-white text-lg"
+              >
+                ✕
+              </button>
+            </div>
+            <table className="w-full text-xs text-left text-gray-300">
+              <thead className="bg-neutral-800 text-gray-200">
+                <tr>
+                  <th className="p-2">Size</th>
+                  <th className="p-2">Chest</th>
+                  <th className="p-2">Length</th>
+                  <th className="p-2">Shoulder</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-800">
+                <tr><td className="p-2 font-semibold">S</td><td className="p-2">38</td><td className="p-2">27.5</td><td className="p-2">17</td></tr>
+                <tr><td className="p-2 font-semibold">M</td><td className="p-2">40</td><td className="p-2">28.5</td><td className="p-2">17.5</td></tr>
+                <tr><td className="p-2 font-semibold">L</td><td className="p-2">42</td><td className="p-2">29.5</td><td className="p-2">18.5</td></tr>
+                <tr><td className="p-2 font-semibold">XL</td><td className="p-2">44</td><td className="p-2">30.5</td><td className="p-2">19</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 px-8 py-8 text-sm text-gray-300 leading-relaxed">
-          <p>An e-commerce website is an online platform that facilitates the buying and selling of products or services...</p>
-        </div>
-      </div>
+      )}
 
-      {/* --------- display related products ---------- */}
-      <div className="mt-10">
-        <RelatedProducts category={productData.category} subCategory={productData.subCategory} />
+      {/* Image Zoom Modal on Click */}
+      {selectedImageModal && (
+        <div
+          onClick={() => setSelectedImageModal(null)}
+          className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <img
+            src={selectedImageModal}
+            alt="Zoomed Product"
+            className="max-h-[85vh] max-w-full rounded-xl object-contain"
+          />
+        </div>
+      )}
+
+      {/* Related Products Section */}
+      <div className="mt-14">
+        <RelatedProducts
+          category={productData.category}
+          subCategory={productData.subCategory}
+        />
       </div>
     </div>
-  ) : (
-    <div className="opacity-0"></div>
   );
 };
 

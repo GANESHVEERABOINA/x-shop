@@ -98,6 +98,39 @@ const adminLogin = async (req, res) => {
         res.json({ success: false, message: error.message })
     }
 }
+// Get Real User Profile Data
+const getUserProfile = async (req, res) => {
+    try {
+        // auth.js middleware nunchi vachina userId
+        const { userId } = req.body; 
+        const user = await userModel.findById(userId).select('-password');
+        
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+        
+        res.json({ success: true, userData: user });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+}
 
+// Save Real Address to Database
+const addUserAddress = async (req, res) => {
+    try {
+        const { userId, address } = req.body;
+        const user = await userModel.findById(userId);
+        
+        // Kotha address ni user database lo add cheyadam
+        user.addresses.push(address);
+        await user.save();
+        
+        res.json({ success: true, message: "Address Saved Successfully", addresses: user.addresses });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+}
 
-export { loginUser, registerUser, adminLogin }
+export { loginUser, registerUser, adminLogin, getUserProfile, addUserAddress };

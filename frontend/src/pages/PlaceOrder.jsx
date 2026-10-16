@@ -1,190 +1,176 @@
-import React, { useContext, useState } from 'react'
-import Title from '../components/Title'
-import CartTotal from '../components/CartTotal'
-import { assets } from '../assets/assets'
-import { ShopContext } from '../context/ShopContext'
-import axios from 'axios'
-import { toast } from 'react-toastify'
+import React, { useContext, useState, useEffect } from 'react';
+import { ShopContext } from '../context/ShopContext';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const PlaceOrder = () => {
+  const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, products, currency } = useContext(ShopContext);
 
-    const [method, setMethod] = useState('cod');
-    const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
-    const [formData, setFormData] = useState({
-        firstName: '', lastName: '', email: '', street: '', city: '', state: '', zipcode: '', country: '', phone: ''
-    })
+  const [method, setMethod] = useState('cod');
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [upiId, setUpiId] = useState('');
 
-    const onChangeHandler = (event) => {
-        const name = event.target.name
-        const value = event.target.value
-        setFormData(data => ({ ...data, [name]: value }))
+  // Fetch Real Addresses from DB for Checkout
+  const fetchUserAddresses = async () => {
+    try {
+      if (!token) return;
+      const response = await axios.get(backendUrl + '/api/user/profile', { headers: { token } });
+      if (response.data.success && response.data.userData.addresses.length > 0) {
+        setAddresses(response.data.userData.addresses);
+        setSelectedAddress(response.data.userData.addresses[0]); // Select first address by default
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserAddresses();
+  }, [token]);
+
+  const sellingSubtotal = getCartAmount() || 0;
+  const mrpTotal = Math.round(sellingSubtotal * 2.2);
+  const mrpDiscount = mrpTotal - sellingSubtotal;
+  const platformFee = 10;
+  const handlingFee = method === 'cod' ? 7 : 0;
+  const finalPayable = Math.max(sellingSubtotal + platformFee + handlingFee, 0);
+
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      toast.error('Please add a delivery address in your Profile first!');
+      navigate('/profile');
+      return;
     }
 
-    const initPay = (order) => {
-        const options = {
-            key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-            amount: order.amount,
-            currency: order.currency,
-            name:'Order Payment',
-            description:'Order Payment',
-            order_id: order.id,
-            receipt: order.receipt,
-            handler: async (response) => {
-                try {
-                    const { data } = await axios.post(backendUrl + '/api/order/verifyRazorpay',response,{headers:{token}})
-                    if (data.success) {
-                        navigate('/orders')
-                        setCartItems({})
-                    }
-                } catch (error) {
-                    toast.error(error)
-                }
+    try {
+      let orderItems = [];
+      for (const items in cartItems) {
+        for (const item in cartItems[items]) {
+          if (cartItems[items][item] > 0) {
+            const itemInfo = structuredClone(products.find((product) => product._id === items));
+            if (itemInfo) {
+              itemInfo.size = item;
+              itemInfo.quantity = cartItems[items][item];
+              orderItems.push(itemInfo);
             }
+          }
         }
-        const rzp = new window.Razorpay(options)
-        rzp.open()
+      }
+
+      const orderData = {
+        address: selectedAddress,
+        items: orderItems,
+        amount: finalPayable,
+      };
+
+      if (method === 'cod' || method === 'upi' || method === 'card') {
+        const response = await axios.post(backendUrl + '/api/order/place', orderData, { headers: { token } });
+        if (response.data.success) {
+          setCartItems({});
+          toast.success('Order Placed Successfully!');
+          navigate('/orders');
+        } else {
+          toast.error(response.data.message);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message);
     }
+  };
 
-    const onSubmitHandler = async (event) => {
-        event.preventDefault()
-
-        // --- NEW: Extra Security Check ---
-        if (!token) {
-            toast.error("Please login to place an order");
-            navigate('/login');
-            return null;
-        }
-
-        try {
-            let orderItems = []
-            for (const items in cartItems) {
-                for (const item in cartItems[items]) {
-                    if (cartItems[items][item] > 0) {
-                        const itemInfo = structuredClone(products.find(product => product._id === items))
-                        if (itemInfo) {
-                            itemInfo.size = item
-                            itemInfo.quantity = cartItems[items][item]
-                            orderItems.push(itemInfo)
-                        }
-                    }
-                }
-            }
-
-            let orderData = {
-                address: formData,
-                items: orderItems,
-                amount: getCartAmount() + delivery_fee
-            }
-
-            switch (method) {
-                case 'cod':
-                    const response = await axios.post(backendUrl + '/api/order/place',orderData,{headers:{token}})
-                    if (response.data.success) {
-                        setCartItems({})
-                        navigate('/orders')
-                    } else {
-                        toast.error(response.data.message)
-                    }
-                    break;
-                case 'stripe':
-                    const responseStripe = await axios.post(backendUrl + '/api/order/stripe',orderData,{headers:{token}})
-                    if (responseStripe.data.success) {
-                        const {session_url} = responseStripe.data
-                        window.location.replace(session_url)
-                    } else {
-                        toast.error(responseStripe.data.message)
-                    }
-                    break;
-                case 'razorpay':
-                    const responseRazorpay = await axios.post(backendUrl + '/api/order/razorpay', orderData, {headers:{token}})
-                    if (responseRazorpay.data.success) {
-                        initPay(responseRazorpay.data.order)
-                    }
-                    break;
-                default:
-                    break;
-            }
-        } catch (error) {
-            console.log(error)
-            toast.error(error.message)
-        }
-    }
-
-    const inputStyle = 'w-full bg-transparent border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-white/50 focus:bg-white/5 transition-colors duration-300';
-
+  if (!selectedAddress) {
     return (
-        <form onSubmit={onSubmitHandler} className='flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t border-white/10'>
-            {/* ------------- Left Side ---------------- */}
-            <div className='flex flex-col gap-5 w-full sm:max-w-[480px]'>
+      <div className="max-w-6xl mx-auto px-4 py-20 text-center text-white space-y-4">
+        <h2 className="text-xl font-bold">No Delivery Address Found</h2>
+        <p className="text-gray-400">Please save a delivery address in your profile to proceed with checkout.</p>
+        <button onClick={() => navigate('/profile')} className="bg-[#2874f0] text-white font-bold px-6 py-2.5 rounded-lg">
+          Add Address
+        </button>
+      </div>
+    );
+  }
 
-                <div className='text-xl sm:text-2xl my-3'>
-                    <Title text1={'DELIVERY'} text2={'INFORMATION'} />
-                </div>
-                <div className='flex gap-3'>
-                    <input required onChange={onChangeHandler} name='firstName' value={formData.firstName} className={inputStyle} type="text" placeholder='First name' />
-                    <input required onChange={onChangeHandler} name='lastName' value={formData.lastName} className={inputStyle} type="text" placeholder='Last name' />
-                </div>
-                <input required onChange={onChangeHandler} name='email' value={formData.email} className={inputStyle} type="email" placeholder='Email address' />
-                <input required onChange={onChangeHandler} name='street' value={formData.street} className={inputStyle} type="text" placeholder='Street' />
-                <div className='flex gap-3'>
-                    <input required onChange={onChangeHandler} name='city' value={formData.city} className={inputStyle} type="text" placeholder='City' />
-                    <input onChange={onChangeHandler} name='state' value={formData.state} className={inputStyle} type="text" placeholder='State' />
-                </div>
-                <div className='flex gap-3'>
-                    <input required onChange={onChangeHandler} name='zipcode' value={formData.zipcode} className={inputStyle} type="number" placeholder='Zipcode' />
-                    <input required onChange={onChangeHandler} name='country' value={formData.country} className={inputStyle} type="text" placeholder='Country' />
-                </div>
-                <input required onChange={onChangeHandler} name='phone' value={formData.phone} className={inputStyle} type="number" placeholder='Phone' />
+  return (
+    <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 text-white">
+      {/* Real Delivery Address Bar */}
+      <div className="bg-[#111111] border border-neutral-800 rounded-2xl p-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1 text-xs sm:text-sm">
+          <div className="flex items-center gap-2">
+            <span className="bg-[#2874f0] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+              Deliver To: {selectedAddress.type || 'HOME'}
+            </span>
+            <span className="font-bold text-white">
+              {selectedAddress.firstName} {selectedAddress.lastName}
+            </span>
+            <span className="text-gray-400">({selectedAddress.phone})</span>
+          </div>
+          <p className="text-gray-300 text-xs">
+            {selectedAddress.street}, {selectedAddress.city}, {selectedAddress.state} - <strong className="text-white">{selectedAddress.zipcode}</strong>
+          </p>
+        </div>
+        <button onClick={() => navigate('/profile')} className="text-xs font-bold text-[#2874f0] border border-[#2874f0]/50 hover:bg-[#2874f0]/10 px-3.5 py-2 rounded-xl">
+          Change Address
+        </button>
+      </div>
+
+      {/* Payment Container */}
+      <div className="bg-[#0e0e0e] border border-neutral-800 rounded-3xl p-4 sm:p-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-neutral-800 pb-4 mb-6">
+          <h1 className="text-base sm:text-lg font-bold text-white">Complete Payment</h1>
+          <span className="bg-neutral-900 border border-neutral-700 text-emerald-400 text-xs font-semibold px-3 py-1 rounded-lg">
+            🔒 100% Secure
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Payment Methods */}
+          <div className="lg:col-span-4 space-y-2.5">
+            <div onClick={() => setMethod('cod')} className={`p-3.5 rounded-xl border transition cursor-pointer flex items-start gap-3 ${method === 'cod' ? 'bg-[#1a1f2e] border-[#2874f0]' : 'bg-[#141414] border-neutral-800'}`}>
+              <span className="text-lg">👍</span>
+              <div><p className="text-sm font-bold text-white">Cash on Delivery</p><p className="text-[11px] text-gray-400">Pay at your doorstep</p></div>
             </div>
-
-            {/* ------------- Right Side ------------------ */}
-            <div className='mt-8'>
-
-                <div className='mt-8 min-w-80'>
-                    <CartTotal />
-                </div>
-
-                <div className='mt-12'>
-                    <Title text1={'PAYMENT'} text2={'METHOD'} />
-                    {/* --------------- Payment Method Selection ------------- */}
-                    <div className='flex gap-4 flex-col lg:flex-row'>
-                        <div 
-                          onClick={() => setMethod('stripe')} 
-                          className={`flex items-center gap-3 border rounded-xl p-3 cursor-pointer transition-all duration-300 ${method === 'stripe' ? 'bg-white/10 border-white/40 shadow-[0_0_10px_rgba(255,255,255,0.05)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                        >
-                            <p className={`min-w-4 h-4 border rounded-full transition-colors duration-300 ${method === 'stripe' ? 'bg-white border-white' : 'border-gray-500'}`}></p>
-                            <img className='h-5 mx-4 object-contain filter invert opacity-90' src={assets.stripe_logo} alt="Stripe" />
-                        </div>
-                        
-                        <div 
-                          onClick={() => setMethod('razorpay')} 
-                          className={`flex items-center gap-3 border rounded-xl p-3 cursor-pointer transition-all duration-300 ${method === 'razorpay' ? 'bg-white/10 border-white/40 shadow-[0_0_10px_rgba(255,255,255,0.05)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                        >
-                            <p className={`min-w-4 h-4 border rounded-full transition-colors duration-300 ${method === 'razorpay' ? 'bg-white border-white' : 'border-gray-500'}`}></p>
-                            <img className='h-5 mx-4 object-contain' src={assets.razorpay_logo} alt="Razorpay" />
-                        </div>
-
-                        <div 
-                          onClick={() => setMethod('cod')} 
-                          className={`flex items-center gap-3 border rounded-xl p-3 cursor-pointer transition-all duration-300 ${method === 'cod' ? 'bg-white/10 border-white/40 shadow-[0_0_10px_rgba(255,255,255,0.05)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                        >
-                            <p className={`min-w-4 h-4 border rounded-full transition-colors duration-300 ${method === 'cod' ? 'bg-white border-white' : 'border-gray-500'}`}></p>
-                            <p className={`text-sm font-medium mx-4 tracking-wide transition-colors ${method === 'cod' ? 'text-white' : 'text-gray-400'}`}>CASH ON DELIVERY</p>
-                        </div>
-                    </div>
-
-                    <div className='w-full text-end mt-10'>
-                        <button 
-                          type='submit' 
-                          className='bg-white text-black font-semibold text-sm tracking-wide px-12 py-3 rounded-full hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-in-out shadow-lg'
-                        >
-                            PLACE ORDER
-                        </button>
-                    </div>
-                </div>
+            <div onClick={() => setMethod('upi')} className={`p-3.5 rounded-xl border transition cursor-pointer flex items-start gap-3 ${method === 'upi' ? 'bg-[#1a1f2e] border-[#2874f0]' : 'bg-[#141414] border-neutral-800'}`}>
+              <span className="text-lg">📲</span>
+              <div><p className="text-sm font-bold text-white">UPI</p><p className="text-[11px] text-gray-400">Pay by any UPI app</p></div>
             </div>
-        </form>
-    )
-}
+          </div>
 
-export default PlaceOrder
+          {/* Active Payment Box */}
+          <div className="lg:col-span-4 bg-[#141414] border border-neutral-800 rounded-2xl p-5 space-y-4">
+            {method === 'cod' && (
+              <div className="space-y-4 border-t-2 border-[#ffc200] pt-3">
+                <h3 className="text-sm font-bold text-white">Cash on Delivery</h3>
+                <button onClick={handlePlaceOrder} className="w-full py-3.5 rounded-xl bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-sm shadow-lg transition">
+                  Place Order
+                </button>
+              </div>
+            )}
+            {method === 'upi' && (
+              <div className="space-y-4 border-t-2 border-[#ffc200] pt-3">
+                <h3 className="text-sm font-bold text-white">Pay using UPI ID</h3>
+                <input type="text" value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="Enter UPI ID" className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white outline-none" />
+                <button onClick={handlePlaceOrder} className="w-full py-3.5 rounded-xl bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-sm shadow-lg transition">
+                  Pay {currency}{finalPayable}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Price Breakdown */}
+          <div className="lg:col-span-4 bg-[#151824] border border-indigo-500/20 rounded-2xl p-5 space-y-3.5 text-sm">
+            <div className="flex justify-between text-gray-300"><span>MRP Total</span><span className="font-semibold text-white">{currency}{mrpTotal}</span></div>
+            <div className="flex justify-between text-gray-400 text-xs"><span>Platform Fee</span><span>{currency}{platformFee}</span></div>
+            {handlingFee > 0 && <div className="flex justify-between text-gray-400 text-xs"><span>COD Fee</span><span>{currency}{handlingFee}</span></div>}
+            <div className="flex justify-between text-xs"><span className="text-gray-400">MRP Discount</span><span className="text-emerald-400 font-semibold">-{currency}{mrpDiscount}</span></div>
+            <div className="border-t border-neutral-700 pt-3 flex justify-between items-center text-base font-extrabold">
+              <span className="text-[#60a5fa]">Total Amount</span><span className="text-[#60a5fa]">{currency}{finalPayable}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PlaceOrder;
