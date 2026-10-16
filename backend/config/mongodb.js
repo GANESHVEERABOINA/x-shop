@@ -6,7 +6,6 @@ const connectDB = async () => {
         console.log("DB Connected");
     })
 
-    // Permanent fix: URL lo database peru marichina, eppudu 'xshop' ke connect avuthundi
     await mongoose.connect(process.env.MONGODB_URI, {
         dbName: "xshop"
     })
