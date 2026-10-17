@@ -3,64 +3,63 @@ import userModel from "../models/userModel.js";
 import Stripe from 'stripe'
 import razorpay from 'razorpay'
 
-// global variables
 const currency = 'inr'
-const deliveryCharge = 50
+const deliveryCharge = 10
 
-// gateway initialize
-const stripeKey = process.env.STRIPE_SECRET_KEY
-const stripe = stripeKey?.startsWith('sk_') ? new Stripe(stripeKey) : null
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
-const razorpayReady = Boolean(
-    process.env.RAZORPAY_KEY_ID?.startsWith('rzp_') &&
-    process.env.RAZORPAY_KEY_SECRET &&
-    !process.env.RAZORPAY_KEY_SECRET.toLowerCase().includes('paste')
-)
-const razorpayInstance = razorpayReady ? new razorpay({
+const razorpayInstance = new razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
-}) : null
+})
 
-// Placing orders using COD Method
-const placeOrder = async (req,res) => {
-    
+// Placing orders using COD / UPI Method (Stores in MongoDB)
+const placeOrder = async (req, res) => {
     try {
-        
-        const { userId, items, amount, address} = req.body;
+        const { userId, items, amount, address, paymentMethod } = req.body;
 
         const orderData = {
             userId,
             items,
             address,
             amount,
-            paymentMethod:"COD",
-            payment:false,
-            date: Date.now()
+            paymentMethod: paymentMethod || "COD",
+            payment: paymentMethod === "UPI" ? true : false,
+            date: Date.now(),
+            status: 'Order Placed',
+            statusHistory: [
+                {
+                    status: 'Order Placed',
+                    date: Date.now(),
+                    note: 'Order confirmed and received by X-Shop warehouse.'
+                }
+            ]
         }
 
         const newOrder = new orderModel(orderData)
         await newOrder.save()
 
-        await userModel.findByIdAndUpdate(userId,{cartData:{}})
+        // Clear user cart & auto-save address if user has no saved addresses
+        const user = await userModel.findById(userId);
+        if (user) {
+            user.cartData = {};
+            if (address && (!user.addresses || user.addresses.length === 0)) {
+                user.addresses = [{ ...address, id: 'addr_' + Date.now() }];
+            }
+            await user.save();
+        }
 
-        res.json({success:true,message:"Order Placed"})
-
-
+        res.json({ success: true, message: "Order Placed", orderId: newOrder._id })
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
-
 }
 
 // Placing orders using Stripe Method
-const placeOrderStripe = async (req,res) => {
-    if (!stripe) {
-        return res.status(503).json({ success: false, message: 'Stripe payments are not configured for this environment.' })
-    }
+const placeOrderStripe = async (req, res) => {
     try {
-        
-        const { userId, items, amount, address} = req.body
+        const { userId, items, amount, address } = req.body
         const { origin } = req.headers;
 
         const orderData = {
@@ -68,9 +67,11 @@ const placeOrderStripe = async (req,res) => {
             items,
             address,
             amount,
-            paymentMethod:"Stripe",
-            payment:false,
-            date: Date.now()
+            paymentMethod: "Stripe",
+            payment: false,
+            date: Date.now(),
+            status: 'Order Placed',
+            statusHistory: [{ status: 'Order Placed', date: Date.now(), note: 'Order initiated via Stripe.' }]
         }
 
         const newOrder = new orderModel(orderData)
@@ -78,10 +79,8 @@ const placeOrderStripe = async (req,res) => {
 
         const line_items = items.map((item) => ({
             price_data: {
-                currency:currency,
-                product_data: {
-                    name:item.name
-                },
+                currency: currency,
+                product_data: { name: item.name },
                 unit_amount: item.price * 100
             },
             quantity: item.quantity
@@ -89,10 +88,8 @@ const placeOrderStripe = async (req,res) => {
 
         line_items.push({
             price_data: {
-                currency:currency,
-                product_data: {
-                    name:'Delivery Charges'
-                },
+                currency: currency,
+                product_data: { name: 'Delivery Charges' },
                 unit_amount: deliveryCharge * 100
             },
             quantity: 1
@@ -100,58 +97,49 @@ const placeOrderStripe = async (req,res) => {
 
         const session = await stripe.checkout.sessions.create({
             success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
-            cancel_url:  `${origin}/verify?success=false&orderId=${newOrder._id}`,
+            cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
             line_items,
             mode: 'payment',
         })
 
-        res.json({success:true,session_url:session.url});
-
+        res.json({ success: true, session_url: session.url });
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
-// Verify Stripe 
-const verifyStripe = async (req,res) => {
-
+const verifyStripe = async (req, res) => {
     const { orderId, success, userId } = req.body
-
     try {
         if (success === "true") {
-            await orderModel.findByIdAndUpdate(orderId, {payment:true});
-            await userModel.findByIdAndUpdate(userId, {cartData: {}})
-            res.json({success: true});
+            await orderModel.findByIdAndUpdate(orderId, { payment: true });
+            await userModel.findByIdAndUpdate(userId, { cartData: {} })
+            res.json({ success: true });
         } else {
             await orderModel.findByIdAndDelete(orderId)
-            res.json({success:false})
+            res.json({ success: false })
         }
-        
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
-
 }
 
-// Placing orders using Razorpay Method
-const placeOrderRazorpay = async (req,res) => {
-    if (!razorpayInstance) {
-        return res.status(503).json({ success: false, message: 'Razorpay payments are not configured for this environment.' })
-    }
+const placeOrderRazorpay = async (req, res) => {
     try {
-        
-        const { userId, items, amount, address} = req.body
+        const { userId, items, amount, address } = req.body
 
         const orderData = {
             userId,
             items,
             address,
             amount,
-            paymentMethod:"Razorpay",
-            payment:false,
-            date: Date.now()
+            paymentMethod: "Razorpay",
+            payment: false,
+            date: Date.now(),
+            status: 'Order Placed',
+            statusHistory: [{ status: 'Order Placed', date: Date.now(), note: 'Order initiated via Razorpay.' }]
         }
 
         const newOrder = new orderModel(orderData)
@@ -160,90 +148,116 @@ const placeOrderRazorpay = async (req,res) => {
         const options = {
             amount: amount * 100,
             currency: currency.toUpperCase(),
-            receipt : newOrder._id.toString()
+            receipt: newOrder._id.toString()
         }
 
-        await razorpayInstance.orders.create(options, (error,order)=>{
+        await razorpayInstance.orders.create(options, (error, order) => {
             if (error) {
                 console.log(error)
-                return res.json({success:false, message: error})
+                return res.json({ success: false, message: error })
             }
-            res.json({success:true,order})
+            res.json({ success: true, order })
         })
-
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
-const verifyRazorpay = async (req,res) => {
-    if (!razorpayInstance) {
-        return res.status(503).json({ success: false, message: 'Razorpay payments are not configured for this environment.' })
-    }
+const verifyRazorpay = async (req, res) => {
     try {
-        
-        const { userId, razorpay_order_id  } = req.body
-
+        const { userId, razorpay_order_id } = req.body
         const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
         if (orderInfo.status === 'paid') {
-            await orderModel.findByIdAndUpdate(orderInfo.receipt,{payment:true});
-            await userModel.findByIdAndUpdate(userId,{cartData:{}})
+            await orderModel.findByIdAndUpdate(orderInfo.receipt, { payment: true });
+            await userModel.findByIdAndUpdate(userId, { cartData: {} })
             res.json({ success: true, message: "Payment Successful" })
         } else {
-             res.json({ success: false, message: 'Payment Failed' });
+            res.json({ success: false, message: 'Payment Failed' });
         }
-
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
-
 
 // All Orders data for Admin Panel
-const allOrders = async (req,res) => {
-
+const allOrders = async (req, res) => {
     try {
-        
         const orders = await orderModel.find({})
-        res.json({success:true,orders})
-
+        res.json({ success: true, orders })
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
-
 }
 
-// User Order Data For Forntend
-const userOrders = async (req,res) => {
+// User Order Data For Frontend (Sorted newest first)
+const userOrders = async (req, res) => {
     try {
-        
         const { userId } = req.body
-
-        const orders = await orderModel.find({ userId })
-        res.json({success:true,orders})
-
+        const orders = await orderModel.find({ userId }).sort({ date: -1 })
+        res.json({ success: true, orders })
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
-// update order status from Admin Panel
-const updateStatus = async (req,res) => {
+// Update order status from Admin Panel (Saves real tracking step in DB)
+const updateStatus = async (req, res) => {
     try {
-        
         const { orderId, status } = req.body
+        const order = await orderModel.findById(orderId);
+        if (!order) {
+            return res.json({ success: false, message: 'Order not found' });
+        }
 
-        await orderModel.findByIdAndUpdate(orderId, { status })
-        res.json({success:true,message:'Status Updated'})
+        order.status = status;
+        const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+        history.push({
+            status,
+            date: Date.now(),
+            note: `Order status updated to ${status}`
+        });
+        order.statusHistory = history;
 
+        await order.save();
+        res.json({ success: true, message: 'Status Updated' })
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
-export {verifyRazorpay, verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus}
+// Allow User to Cancel Order (Saves in MongoDB)
+const cancelOrder = async (req, res) => {
+    try {
+        const { userId, orderId } = req.body;
+        const order = await orderModel.findOne({ _id: orderId, userId });
+
+        if (!order) {
+            return res.json({ success: false, message: 'Order not found' });
+        }
+        if (order.status === 'Delivered') {
+            return res.json({ success: false, message: 'Delivered orders cannot be cancelled' });
+        }
+
+        order.status = 'Cancelled';
+        const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+        history.push({
+            status: 'Cancelled',
+            date: Date.now(),
+            note: 'Order was cancelled as per your request.'
+        });
+        order.statusHistory = history;
+
+        await order.save();
+        res.json({ success: true, message: 'Order Cancelled Successfully' });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+}
+
+export { verifyRazorpay, verifyStripe, placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, cancelOrder }

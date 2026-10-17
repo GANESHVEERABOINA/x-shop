@@ -6,22 +6,22 @@ import { toast } from 'react-toastify';
 
 const Product = () => {
   const { productId } = useParams();
-  const { products, currency, addToCart, navigate } = useContext(ShopContext);
+  const { products, currency, addToCart, navigate, token } = useContext(ShopContext);
 
   const [productData, setProductData] = useState(null);
+  const [activeImage, setActiveImage] = useState('');
   const [size, setSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [wishlisted, setWishlisted] = useState(false);
   const [showOffers, setShowOffers] = useState(true);
   const [showSizeChart, setShowSizeChart] = useState(false);
-  const [selectedImageModal, setSelectedImageModal] = useState(null);
-  const [pincode, setPincode] = useState('');
-  const [deliveryMsg, setDeliveryMsg] = useState('');
 
   useEffect(() => {
     const item = products.find((p) => p._id === productId);
     if (item) {
       setProductData(item);
+      const imgs = Array.isArray(item.image) ? item.image : [item.image];
+      setActiveImage(imgs[0] || '');
       setSize(item.sizes?.[0] || '');
       setQuantity(1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -30,22 +30,27 @@ const Product = () => {
 
   if (!productData) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center text-gray-400">
+      <div className="min-h-[50vh] flex items-center justify-center text-gray-400 text-sm">
         Loading product details...
       </div>
     );
   }
 
-  // Flipkart-style price calculations
+  const images = Array.isArray(productData.image) ? productData.image : [productData.image];
   const sellingPrice = Number(productData.price) || 999;
   const mrpPrice = Math.round(sellingPrice * 2.4);
   const discountPercent = Math.round(((mrpPrice - sellingPrice) / mrpPrice) * 100);
-  const wowDealPrice = Math.max(sellingPrice - Math.round(sellingPrice * 0.08), 99);
+  const specialDealPrice = Math.max(sellingPrice - Math.round(sellingPrice * 0.08), 99);
 
-  // Handle Add to Cart with quantity
+  // STRICT LOGIN CHECK FOR ADD TO CART
   const handleAddToCart = () => {
+    if (!token) {
+      toast.error('Please login first to add items to cart!');
+      navigate('/login');
+      return;
+    }
     if (!size) {
-      toast.error('Please select a size first!');
+      toast.error('Please select a size!');
       return;
     }
     for (let i = 0; i < quantity; i++) {
@@ -54,326 +59,200 @@ const Product = () => {
     toast.success('Added to cart!');
   };
 
-  // Handle Buy Now
+  // STRICT LOGIN CHECK FOR BUY NOW
   const handleBuyNow = () => {
+    if (!token) {
+      toast.error('Please login first to proceed with purchase!');
+      navigate('/login');
+      return;
+    }
     if (!size) {
-      toast.error('Please select a size first!');
+      toast.error('Please select a size!');
       return;
     }
     for (let i = 0; i < quantity; i++) {
       addToCart(productData._id, size);
     }
-    navigate('/cart');
+    navigate('/place-order');
   };
-
-  // Share button handler
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.info('Product link copied to clipboard!');
-  };
-
-  // Check Pincode handler
-  const handleCheckPincode = (e) => {
-    e.preventDefault();
-    if (pincode.length === 6 && !isNaN(pincode)) {
-      setDeliveryMsg('Free Delivery available by 3-4 Days • Cash on Delivery eligible');
-    } else {
-      setDeliveryMsg('Please enter a valid 6-digit pincode');
-    }
-  };
-
-  const images = Array.isArray(productData.image) ? productData.image : [productData.image];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16 text-white">
-      {/* 1. Flipkart-Style Breadcrumbs */}
-      <nav className="text-xs sm:text-sm text-gray-400 mb-4 flex flex-wrap items-center gap-1.5">
-        <Link to="/" className="hover:text-white transition">Home</Link>
+    <div className="max-w-6xl mx-auto px-3 sm:px-6 pt-3 pb-32 sm:pb-16 text-white">
+      {/* Breadcrumbs */}
+      <nav className="text-[11px] sm:text-xs text-gray-400 mb-4 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
+        <Link to="/" className="hover:text-[#ffc200]">Home</Link>
         <span>/</span>
-        <Link to="/collection" className="hover:text-white transition">
-          {productData.category || 'Clothing'}
-        </Link>
+        <Link to="/collection" className="hover:text-[#ffc200]">{productData.category || 'Fashion'}</Link>
         <span>/</span>
-        <span className="text-gray-400">{productData.subCategory || 'Topwear'}</span>
+        <span className="text-gray-500">{productData.subCategory || 'Collection'}</span>
         <span>/</span>
-        <span className="text-gray-200 font-medium truncate max-w-[260px] sm:max-w-md">
-          {productData.name}
-        </span>
+        <span className="text-white font-semibold truncate max-w-[200px] sm:max-w-xs">{productData.name}</span>
       </nav>
 
-      {/* 2. Main Flipkart 2-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Main Responsive Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         
-        {/* LEFT COLUMN: Compact 2-Column Image Grid (7 Cols on Desktop) */}
-        <div className="lg:col-span-7 relative">
-          <div
-            className={`grid gap-3 ${
-              images.length === 1 ? 'grid-cols-1 max-w-[380px] mx-auto' : 'grid-cols-2'
-            }`}
-          >
-            {images.map((imgUrl, index) => (
-              <div
-                key={index}
-                onClick={() => setSelectedImageModal(imgUrl)}
-                className="relative group bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden cursor-zoom-in h-[280px] sm:h-[350px] md:h-[380px]"
+        {/* LEFT: Product Images */}
+        <div className="lg:col-span-6">
+          <div className="block lg:hidden">
+            <div className="relative w-full max-w-[320px] mx-auto aspect-[3/4] bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+              <img src={activeImage} alt={productData.name} className="w-full h-full object-cover object-top" />
+              <button
+                onClick={() => setWishlisted(!wishlisted)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 text-black flex items-center justify-center shadow cursor-pointer"
               >
-                <img
-                  src={imgUrl}
-                  alt={`${productData.name} - view ${index + 1}`}
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                />
-
-                {/* Wishlist & Share Floating Icons on Top-Right Image */}
-                {index === (images.length > 1 ? 1 : 0) && (
-                  <div
-                    className="absolute top-3 right-3 flex flex-col gap-2.5 z-10"
-                    onClick={(e) => e.stopPropagation()}
+                {wishlisted ? '❤️' : '🤍'}
+              </button>
+            </div>
+            {images.length > 1 && (
+              <div className="flex justify-center gap-2.5 mt-3 overflow-x-auto py-1">
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(img)}
+                    className={`w-14 h-16 rounded-lg overflow-hidden border-2 shrink-0 cursor-pointer ${
+                      activeImage === img ? 'border-[#ffc200]' : 'border-neutral-800 opacity-60'
+                    }`}
                   >
-                    <button
-                      onClick={() => setWishlisted(!wishlisted)}
-                      title="Wishlist"
-                      className="w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill={wishlisted ? '#ef4444' : 'none'}
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.8}
-                        stroke={wishlisted ? '#ef4444' : 'currentColor'}
-                        className="w-5 h-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                        />
-                      </svg>
-                    </button>
+                    <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-                    <button
-                      onClick={handleShare}
-                      title="Share"
-                      className="w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.8}
-                        stroke="currentColor"
-                        className="w-5 h-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+          <div className={`hidden lg:grid gap-3 ${images.length === 1 ? 'grid-cols-1 max-w-[340px] mx-auto' : 'grid-cols-2'}`}>
+            {images.map((img, idx) => (
+              <div key={idx} className="relative bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden h-[320px]">
+                <img
+                  src={img}
+                  alt={`${productData.name} ${idx + 1}`}
+                  className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
+                />
+                {idx === 0 && (
+                  <button
+                    onClick={() => setWishlisted(!wishlisted)}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 text-black flex items-center justify-center shadow cursor-pointer"
+                  >
+                    {wishlisted ? '❤️' : '🤍'}
+                  </button>
                 )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Flipkart-Style Product Details (5 Cols on Desktop, Sticky) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-6 bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-5">
-          
-          {/* Size Selection at Top (Flipkart Style) */}
-          {productData.sizes && productData.sizes.length > 0 && (
+        {/* RIGHT: Product Details */}
+        <div className="lg:col-span-6 bg-[#111111] border border-neutral-800 rounded-2xl p-4 sm:p-6 space-y-4">
+          {productData.sizes?.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-sm font-semibold text-gray-200">Select Size</span>
-                <button
-                  onClick={() => setShowSizeChart(true)}
-                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 underline cursor-pointer"
-                >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs sm:text-sm font-semibold text-gray-200">Select Size</span>
+                <button onClick={() => setShowSizeChart(true)} className="text-xs font-semibold text-[#ffc200] hover:underline cursor-pointer">
                   Size Chart
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2.5">
-                {productData.sizes.map((item, index) => (
+              <div className="flex flex-wrap gap-2">
+                {productData.sizes.map((s, idx) => (
                   <button
-                    key={index}
-                    onClick={() => setSize(item)}
-                    className={`min-w-[48px] h-11 px-3.5 rounded-lg font-medium text-sm border transition-all ${
-                      item === size
-                        ? 'border-white bg-white text-black font-bold shadow-sm'
-                        : 'border-neutral-700 bg-neutral-900 text-gray-300 hover:border-gray-400'
+                    key={idx}
+                    onClick={() => setSize(s)}
+                    className={`min-w-[44px] h-10 px-3 rounded-lg text-xs sm:text-sm font-bold border transition cursor-pointer ${
+                      size === s
+                        ? 'bg-[#ffc200] text-black border-[#ffc200]'
+                        : 'bg-neutral-900 text-gray-300 border-neutral-700 hover:border-gray-400'
                     }`}
                   >
-                    {item}
+                    {s}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Brand Store Link & Product Title */}
-          <div className="space-y-1.5">
-            <Link
-              to="/collection"
-              className="text-xs font-semibold text-blue-400 hover:underline inline-block"
-            >
-              Visit X-SHOP {productData.category} Store
+          <div>
+            <Link to="/collection" className="text-xs font-bold text-[#ffc200] hover:underline uppercase tracking-wider">
+              Visit X-Shop {productData.category} Store
             </Link>
-            <h1 className="text-lg sm:text-xl font-semibold text-white leading-snug">
+            <h1 className="text-lg sm:text-2xl font-extrabold text-white mt-1">
               {productData.name}
             </h1>
-            <p className="text-xs sm:text-sm text-gray-400 line-clamp-2">
+            <p className="text-xs text-gray-400 mt-1 line-clamp-2">
               {productData.description}
             </p>
           </div>
 
-          {/* Flipkart Rating Pill */}
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-700 px-2.5 py-1 rounded-md text-xs font-semibold">
-              <span className="text-white">4.2</span>
-              <span className="text-emerald-400">★</span>
-              <span className="text-neutral-600">|</span>
-              <span className="text-gray-300">1,248 Ratings</span>
-            </div>
-            {productData.bestseller && (
-              <span className="text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded">
-                Bestseller
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 bg-neutral-900 border border-neutral-700 px-2.5 py-0.5 rounded text-xs font-semibold">
+              4.2 <span className="text-emerald-400">★</span> | Verified X-Shop Ratings
+            </span>
           </div>
 
-          {/* Price & Discount Block */}
-          <div className="space-y-1.5 pt-1">
-            <span className="inline-block bg-emerald-600 text-white text-[11px] font-semibold px-2.5 py-0.5 rounded">
-              Lowest Price Live • Special Deal
+          <div className="space-y-1">
+            <span className="inline-block bg-emerald-600 text-white text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded">
+              Lowest Price Live
             </span>
             <div className="flex items-baseline gap-2.5">
-              <span className="text-emerald-400 font-bold text-xl sm:text-2xl">
-                ↓{discountPercent}%
-              </span>
-              <span className="text-gray-500 line-through text-lg">
-                {currency}{mrpPrice}
-              </span>
-              <span className="text-white font-bold text-2xl sm:text-3xl">
-                {currency}{sellingPrice}
-              </span>
+              <span className="text-emerald-400 font-bold text-lg sm:text-2xl">↓{discountPercent}%</span>
+              <span className="text-gray-500 line-through text-sm sm:text-lg">{currency}{mrpPrice}</span>
+              <span className="text-[#ffc200] font-extrabold text-xl sm:text-3xl">{currency}{sellingPrice}</span>
             </div>
-            <p className="text-[11px] text-gray-400">Inclusive of all taxes</p>
           </div>
 
-          {/* Flipkart WOW! DEAL Box */}
-          <div className="rounded-xl overflow-hidden border border-indigo-500/30 bg-indigo-950/20">
+          <div className="rounded-xl overflow-hidden border border-neutral-700">
             <button
               onClick={() => setShowOffers(!showOffers)}
-              className="w-full flex items-center justify-between bg-gradient-to-r from-indigo-700 to-blue-600 px-3.5 py-2.5 text-left"
+              className="w-full flex items-center justify-between bg-neutral-900 px-3.5 py-2.5 text-xs font-bold text-[#ffc200] cursor-pointer"
             >
-              <div className="flex items-center gap-2">
-                <span className="bg-black/30 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded leading-tight">
-                  WOW! DEAL
-                </span>
-                <span className="text-xs font-medium text-white">
-                  Apply offers for maximum savings
-                </span>
-              </div>
-              <span className="text-white text-xs">{showOffers ? '▲' : '▼'}</span>
+              <span>⚡ X-SHOP DEAL • Apply offers for maximum savings</span>
+              <span>{showOffers ? '▲' : '▼'}</span>
             </button>
-
             {showOffers && (
-              <div className="p-3.5 bg-neutral-900/90 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-white">
-                    Buy at {currency}{wowDealPrice}
-                  </span>
-                  <span className="text-[11px] text-emerald-400 font-medium">
-                    Extra 8% Instant Discount
-                  </span>
-                </div>
-                <ul className="text-xs text-gray-300 space-y-1">
-                  <li>• 5% Unlimited Cashback on Flipkart Axis & SBI Cards</li>
-                  <li>• Flat ₹50 off on first UPI transaction</li>
-                </ul>
+              <div className="p-3.5 bg-black/60 text-xs space-y-1.5">
+                <p className="font-bold text-white text-sm">
+                  Get it for {currency}{specialDealPrice}
+                </p>
+                <p className="text-gray-400">• 5% Unlimited Cashback on X-Shop Bank & Credit Cards</p>
+                <p className="text-gray-400">• Instant 8% discount on UPI Orders</p>
               </div>
             )}
           </div>
 
-          {/* Quantity Selector */}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-xs font-medium text-gray-400">Quantity</span>
-            <div className="inline-flex items-center border border-neutral-700 rounded-lg bg-neutral-900">
-              <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="px-3 py-1 text-gray-300 hover:text-white text-base"
-              >
-                −
-              </button>
-              <span className="px-3 py-1 text-sm font-semibold">{quantity}</span>
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="px-3 py-1 text-gray-300 hover:text-white text-base"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* Flipkart Side-by-Side Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          {/* Desktop Buttons */}
+          <div className="hidden sm:grid grid-cols-2 gap-3 pt-2">
             <button
               onClick={handleAddToCart}
-              className="w-full py-3 px-4 rounded-xl border border-neutral-600 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-sm transition cursor-pointer"
+              className="py-3 px-4 rounded-xl border border-neutral-600 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-sm cursor-pointer"
             >
               Add to cart
             </button>
             <button
               onClick={handleBuyNow}
-              className="w-full py-3 px-4 rounded-xl bg-[#ffc200] hover:bg-[#ffcf33] text-black font-bold text-sm shadow-md transition cursor-pointer"
+              className="py-3 px-4 rounded-xl bg-[#ffc200] hover:bg-[#ffcf33] text-black font-bold text-sm cursor-pointer"
             >
               Buy at {currency}{sellingPrice}
             </button>
           </div>
-
-          {/* Delivery Pincode Checker */}
-          <div className="pt-3 border-t border-neutral-800 space-y-2">
-            <span className="text-xs font-semibold text-gray-300">Delivery Options</span>
-            <form onSubmit={handleCheckPincode} className="flex gap-2">
-              <input
-                type="text"
-                maxLength={6}
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-                placeholder="Enter 6-digit Pincode"
-                className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
-              />
-              <button
-                type="submit"
-                className="text-xs font-semibold text-blue-400 hover:text-blue-300 px-3 py-1.5 bg-neutral-900 border border-neutral-700 rounded-lg"
-              >
-                Check
-              </button>
-            </form>
-            {deliveryMsg && (
-              <p className="text-xs text-emerald-400">{deliveryMsg}</p>
-            )}
-          </div>
-
-          {/* Trust & Return Policies */}
-          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-neutral-800 text-center text-[11px] text-gray-400">
-            <div className="bg-neutral-900/60 p-2 rounded-lg">
-              <p className="font-semibold text-gray-200">100% Original</p>
-              <p>Authentic Brand</p>
-            </div>
-            <div className="bg-neutral-900/60 p-2 rounded-lg">
-              <p className="font-semibold text-gray-200">Cash on Delivery</p>
-              <p>Pay at Doorstep</p>
-            </div>
-            <div className="bg-neutral-900/60 p-2 rounded-lg">
-              <p className="font-semibold text-gray-200">7 Days Return</p>
-              <p>Easy Exchange</p>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Size Chart Popup Modal */}
+      {/* MOBILE STICKY BOTTOM BAR */}
+      <div className="sm:hidden fixed bottom-14 inset-x-0 bg-[#121212] border-t border-neutral-800 p-3 grid grid-cols-2 gap-3 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.8)]">
+        <button
+          onClick={handleAddToCart}
+          className="py-3 rounded-xl border border-neutral-600 bg-neutral-900 text-white font-bold text-xs cursor-pointer shadow"
+        >
+          Add to cart
+        </button>
+        <button
+          onClick={handleBuyNow}
+          className="py-3 rounded-xl bg-[#ffc200] text-black font-extrabold text-xs cursor-pointer shadow"
+        >
+          Buy at {currency}{sellingPrice}
+        </button>
+      </div>
+
+      {/* Size Chart Modal */}
       {showSizeChart && (
         <div
           onClick={() => setShowSizeChart(false)}
@@ -381,57 +260,32 @@ const Product = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-md w-full p-5 space-y-4"
+            className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-sm w-full p-4 space-y-3"
           >
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-base font-bold text-white">Standard Size Chart (Inches)</h3>
-              <button
-                onClick={() => setShowSizeChart(false)}
-                className="text-gray-400 hover:text-white text-lg"
-              >
-                ✕
-              </button>
+            <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
+              <h4 className="text-sm font-bold text-[#ffc200]">X-Shop Size Chart (Inches)</h4>
+              <button onClick={() => setShowSizeChart(false)} className="cursor-pointer">✕</button>
             </div>
             <table className="w-full text-xs text-left text-gray-300">
-              <thead className="bg-neutral-800 text-gray-200">
-                <tr>
-                  <th className="p-2">Size</th>
-                  <th className="p-2">Chest</th>
-                  <th className="p-2">Length</th>
-                  <th className="p-2">Shoulder</th>
+              <thead>
+                <tr className="border-b border-neutral-800 text-gray-400">
+                  <th className="py-1">Size</th><th>Chest</th><th>Length</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-800">
-                <tr><td className="p-2 font-semibold">S</td><td className="p-2">38</td><td className="p-2">27.5</td><td className="p-2">17</td></tr>
-                <tr><td className="p-2 font-semibold">M</td><td className="p-2">40</td><td className="p-2">28.5</td><td className="p-2">17.5</td></tr>
-                <tr><td className="p-2 font-semibold">L</td><td className="p-2">42</td><td className="p-2">29.5</td><td className="p-2">18.5</td></tr>
-                <tr><td className="p-2 font-semibold">XL</td><td className="p-2">44</td><td className="p-2">30.5</td><td className="p-2">19</td></tr>
+              <tbody>
+                <tr><td className="py-1 font-bold">S</td><td>38</td><td>27.5</td></tr>
+                <tr><td className="py-1 font-bold">M</td><td>40</td><td>28.5</td></tr>
+                <tr><td className="py-1 font-bold">L</td><td>42</td><td>29.5</td></tr>
+                <tr><td className="py-1 font-bold">XL</td><td>44</td><td>30.5</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Image Zoom Modal on Click */}
-      {selectedImageModal && (
-        <div
-          onClick={() => setSelectedImageModal(null)}
-          className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 cursor-zoom-out"
-        >
-          <img
-            src={selectedImageModal}
-            alt="Zoomed Product"
-            className="max-h-[85vh] max-w-full rounded-xl object-contain"
-          />
-        </div>
-      )}
-
-      {/* Related Products Section */}
-      <div className="mt-14">
-        <RelatedProducts
-          category={productData.category}
-          subCategory={productData.subCategory}
-        />
+      {/* Related Products */}
+      <div className="mt-12">
+        <RelatedProducts category={productData.category} subCategory={productData.subCategory} />
       </div>
     </div>
   );

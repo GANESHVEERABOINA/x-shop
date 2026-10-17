@@ -1,43 +1,46 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../context/ShopContext'
+import React, { useContext, useEffect, useState } from 'react';
+import { ShopContext } from '../context/ShopContext';
 import Title from './Title';
 import ProductItem from './ProductItem';
 
 const BestSeller = () => {
+  const { products } = useContext(ShopContext);
+  const [bestSeller, setBestSeller] = useState([]);
 
-    const {products} = useContext(ShopContext);
-    const [bestSeller,setBestSeller] = useState([]);
-
-    useEffect(()=>{
-        const bestProduct = products.filter((item)=>(item.bestseller));
-        setBestSeller(bestProduct.slice(0,5))
-    },[products])
+  useEffect(() => {
+    const bestProduct = products.filter((item) => item.bestseller);
+    setBestSeller(bestProduct.slice(0, 5));
+  }, [products]);
 
   return (
-    <div className='my-16'>
-      <div className='text-center text-3xl py-8'>
-        <Title text1={'BEST'} text2={'SELLERS'}/>
-        <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-400 tracking-wide mt-3'>
-          Discover the Trendsetters of Today
+    <div className="my-10 space-y-8 text-white">
+      {/* Unified Website Heading */}
+      <div className="flex flex-col items-center text-center space-y-2">
+        <span className="bg-neutral-900 border border-neutral-700 text-[#ffc200] text-[11px] font-bold px-3.5 py-1 rounded-full tracking-wider uppercase">
+          🔥 X-SHOP TOP PICKS
+        </span>
+        <Title text1={'BEST'} text2={'SELLERS'} />
+        <p className="text-xs sm:text-sm text-emerald-400 font-medium">
+          Most Loved Styles by X-Shop Customers
         </p>
       </div>
 
-      {/* Render Container ONLY if best selling products are available from DB */}
-      {bestSeller && bestSeller.length > 0 && (
-        <div className='bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl transition-all duration-300'>
-          <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 gap-y-8'>
-            {
-                bestSeller.map((item,index)=>(
-                  <div key={index} className='hover:scale-105 transition-transform duration-300 ease-in-out'>
-                    <ProductItem id={item._id} name={item.name} image={item.image} price={item.price} />
-                  </div>
-                ))
-            }
-          </div>
+      {/* Product Grid */}
+      <div className="bg-[#0b0b0b] border border-neutral-800 rounded-3xl p-4 sm:p-6 shadow-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+          {bestSeller.map((item, index) => (
+            <ProductItem
+              key={item._id || index}
+              id={item._id}
+              name={item.name}
+              image={item.image}
+              price={item.price}
+            />
+          ))}
         </div>
-      )}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default BestSeller
+export default BestSeller;

@@ -1,39 +1,42 @@
-import React from 'react'
+import React from 'react';
+import { toast } from 'react-toastify';
 
 const NewsletterBox = () => {
-
-    const onSubmitHandler = (event) => {
-        event.preventDefault();
-    }
+  const onSubmitHandler = (event) => {
+    event.preventDefault();
+    toast.success('Successfully subscribed to X-Shop alerts!');
+  };
 
   return (
-    <div className='text-center bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 sm:p-12 mx-auto max-w-3xl shadow-2xl my-10'>
-      
-      <p className='text-3xl font-semibold text-white tracking-wide'>
-        Subscribe now & get 20% off
-      </p>
-      
-      <p className='text-gray-300 mt-3 text-sm sm:text-base'>
-        Join our community and enjoy perks, updates, and more!
-      </p>
-      
-      <form onSubmit={onSubmitHandler} className='w-full sm:w-4/5 flex items-center mx-auto mt-8 bg-black/40 border border-white/20 rounded-full p-1 backdrop-blur-lg shadow-inner'>
-        <input 
-          className='w-full sm:flex-1 bg-transparent outline-none text-white px-5 placeholder:text-gray-500' 
-          type="email" 
-          placeholder='Enter your email address...' 
+    <div className="bg-[#111111] border border-neutral-800 rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-2xl my-12">
+      <div className="space-y-2 max-w-xl mx-auto">
+        <span className="bg-[#ffc200]/10 text-[#ffc200] text-[11px] font-bold px-3 py-1 rounded-full uppercase">
+          ⚡ STAY UPDATED
+        </span>
+        <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+          Get 20% Off Your First Order
+        </h3>
+        <p className="text-xs sm:text-sm text-gray-400">
+          Subscribe to our newsletter and never miss out on exclusive drops and limited-time deals.
+        </p>
+      </div>
+
+      <form onSubmit={onSubmitHandler} className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto w-full">
+        <input
+          type="email"
           required
+          placeholder="Enter your email address"
+          className="w-full sm:flex-1 bg-black border border-neutral-700 rounded-2xl px-4 py-3.5 text-sm text-white outline-none focus:border-[#ffc200]"
         />
-        <button 
-          type='submit' 
-          className='bg-white text-black font-semibold text-xs sm:text-sm px-8 py-3 rounded-full hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-in-out'
+        <button
+          type="submit"
+          className="w-full sm:w-auto bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-xs sm:text-sm px-7 py-3.5 rounded-2xl cursor-pointer transition shadow-lg shrink-0"
         >
           SUBSCRIBE
         </button>
       </form>
-      
     </div>
-  )
-}
+  );
+};
 
-export default NewsletterBox
+export default NewsletterBox;

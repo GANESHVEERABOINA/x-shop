@@ -1,10 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import Title from '../components/Title'
-import { assets } from '../assets/assets'
-import CartTotal from '../components/CartTotal'
-import AnimatedButton from '../components/ui/AnimatedButton'
-import { AnimatedNumber } from '../components/ui/AnimatedNumber'
+import React, { useContext, useEffect, useState } from 'react';
+import { ShopContext } from '../context/ShopContext';
+import Title from '../components/Title';
+import { assets } from '../assets/assets';
 
 const Cart = () => {
   const { products, currency, cartItems, updateQuantity, navigate } = useContext(ShopContext);
@@ -12,121 +9,160 @@ const Cart = () => {
 
   useEffect(() => {
     if (products.length > 0) {
-      const tempData = [];
+      let tempData = [];
       for (const items in cartItems) {
         for (const item in cartItems[items]) {
           if (cartItems[items][item] > 0) {
             tempData.push({
               _id: items,
               size: item,
-              quantity: cartItems[items][item]
-            })
+              quantity: cartItems[items][item],
+            });
           }
         }
       }
       setCartData(tempData);
     }
-  }, [cartItems, products])
+  }, [cartItems, products]);
+
+  const getSubtotal = () => {
+    let total = 0;
+    cartData.forEach((cartItem) => {
+      const productData = products.find((product) => product._id === cartItem._id);
+      if (productData) {
+        total += productData.price * cartItem.quantity;
+      }
+    });
+    return total;
+  };
+
+  const subtotal = getSubtotal();
+  const shippingFee = subtotal > 0 ? 50 : 0;
+  const totalAmount = subtotal > 0 ? subtotal + shippingFee : 0;
 
   return (
-    <div className='border-t border-white/10 pt-14 text-white min-h-screen'>
-      
-      {/* Page Title */}
-      <div className='text-2xl mb-8'>
+    <div className="pt-6 pb-20 text-white max-w-7xl mx-auto px-4 sm:px-6">
+      {/* Title */}
+      <div className="mb-8">
         <Title text1={'YOUR'} text2={'CART'} />
       </div>
 
-      {/* Main Container - Desktop lo Side-by-Side (lg:flex-row) */}
-      <div className='flex flex-col lg:flex-row gap-10 xl:gap-16 items-start'>
-        
-        {/* ------------- Left Side (Cart Items List) ------------- */}
-        <div className='flex-1 w-full'>
-          {cartData.map((item, index) => {
-            const productData = products.find((product) => product._id === item._id);
-
-            return (
-              <div 
-                key={index} 
-                className='py-5 px-6 border border-white/10 grid grid-cols-[4fr_1fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4 bg-[#13131A] rounded-2xl mb-5 shadow-lg transition-transform hover:shadow-2xl'
-              >
-                {/* Product Info */}
-                <div className='flex items-center gap-6'>
-                  <img className='w-16 sm:w-20 rounded-xl object-cover' src={productData.image[0]} alt="" />
-                  <div>
-                    <p className='text-sm sm:text-lg font-bold tracking-wide text-white'>{productData.name}</p>
-                    <div className='flex items-center gap-5 mt-3'>
-                      <p className='font-medium text-gray-300'>{currency}{productData.price}</p>
-                      <p className='px-3 py-1 border border-white/20 bg-white/5 rounded-md text-sm text-gray-300'>{item.size}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Animated Quantity Selector */}
-                <div className="flex justify-center sm:justify-start">
-                  <div className="flex items-center gap-3 bg-[#1a1a1a] border border-white/20 rounded-xl px-3 py-1.5 w-max shadow-lg select-none">
-                    <button
-                      onClick={() => item.quantity > 1 ? updateQuantity(item._id, item.size, item.quantity - 1) : null}
-                      className={`text-2xl px-2 transition-colors active:scale-90 ${item.quantity > 1 ? 'text-gray-400 hover:text-white cursor-pointer' : 'text-gray-700 cursor-not-allowed'}`}
-                    >
-                      -
-                    </button>
-                    <div className="w-8 flex justify-center text-xl font-bold text-white">
-                      <AnimatedNumber value={item.quantity} />
-                    </div>
-                    <button
-                      onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
-                      className="text-2xl text-gray-400 hover:text-white px-2 cursor-pointer transition-colors active:scale-90"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Delete Icon */}
-                <div className='flex justify-end'>
-                  <img 
-                    onClick={() => updateQuantity(item._id, item.size, 0)} 
-                    className='w-5 sm:w-6 cursor-pointer hover:scale-110 transition-transform opacity-60 hover:opacity-100 hover:invert' 
-                    src={assets.bin_icon} 
-                    alt="Delete" 
-                  />
-                </div>
-              </div>
-            )
-          })}
-          
-          {/* Cart Empty aythe choopinche text */}
-          {cartData.length === 0 && (
-            <div className="text-center text-gray-500 py-20 bg-[#13131A] border border-white/10 rounded-3xl">
-              Your cart is empty.
-            </div>
-          )}
+      {cartData.length === 0 ? (
+        <div className="bg-[#111111] border border-neutral-800 rounded-3xl p-12 text-center space-y-4 shadow-2xl">
+          <p className="text-lg font-bold text-gray-300">Your X-Shop cart is currently empty.</p>
+          <button
+            onClick={() => navigate('/collection')}
+            className="bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-sm px-6 py-3 rounded-2xl transition cursor-pointer shadow-lg"
+          >
+            Explore Collection →
+          </button>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT: Cart Items List (7 Cols) */}
+          <div className="lg:col-span-7 space-y-4">
+            {cartData.map((item, index) => {
+              const productData = products.find((product) => product._id === item._id);
+              if (!productData) return null;
+              const imgUrl = Array.isArray(productData.image) ? productData.image[0] : productData.image;
 
-        {/* ------------- Right Side (Cart Totals & Checkout) ------------- */}
-        {/* lg:w-[450px] valla width fix avuthundi, sticky top-24 valla kinda scroll ayina idi ikkade kanipisthundi */}
-        {cartData.length > 0 && (
-          <div className='w-full lg:w-[400px] xl:w-[450px] shrink-0 sticky top-24'>
-            <div className='bg-[#13131A] border border-white/10 p-8 rounded-3xl shadow-xl'>
-              
-              <CartTotal />
-              
-              <div className='w-full mt-8 flex justify-center lg:justify-end'>
-                <AnimatedButton 
-                  onClick={() => navigate('/place-order')} 
-                  className='bg-white text-black font-bold tracking-widest w-full'
+              return (
+                <div
+                  key={index}
+                  className="bg-[#111111] border border-neutral-800 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 shadow-xl hover:border-neutral-700 transition"
                 >
-                    PROCEED TO CHECKOUT
-                </AnimatedButton>
-              </div>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={imgUrl}
+                      alt={productData.name}
+                      className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded-xl border border-neutral-800 shrink-0"
+                    />
+                    <div className="space-y-1.5">
+                      <h4 className="text-sm sm:text-base font-bold text-white line-clamp-1">
+                        {productData.name}
+                      </h4>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm sm:text-base font-extrabold text-[#ffc200]">
+                          {currency}{productData.price}
+                        </span>
+                        <span className="bg-neutral-900 border border-neutral-700 text-gray-300 text-xs px-2.5 py-0.5 rounded-lg font-bold">
+                          {item.size}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-            </div>
+                  {/* Quantity & Delete Actions */}
+                  <div className="flex flex-col items-end gap-3">
+                    <button
+                      onClick={() => updateQuantity(item._id, item.size, 0)}
+                      className="text-gray-500 hover:text-red-400 transition cursor-pointer p-1"
+                      title="Remove item"
+                    >
+                      🗑️
+                    </button>
+                    
+                    <div className="flex items-center bg-black border border-neutral-700 rounded-xl overflow-hidden shadow">
+                      <button
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            updateQuantity(item._id, item.size, item.quantity - 1);
+                          }
+                        }}
+                        className="px-3 py-1.5 text-gray-400 hover:text-white transition font-bold"
+                      >
+                        -
+                      </button>
+                      <span className="px-3 text-sm font-extrabold text-white">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
+                        className="px-3 py-1.5 text-gray-400 hover:text-white transition font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
 
-      </div>
+          {/* RIGHT: Cart Totals & Checkout Card (5 Cols) */}
+          <div className="lg:col-span-5 bg-[#111111] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="border-b border-neutral-800 pb-4">
+              <Title text1={'CART'} text2={'TOTALS'} />
+            </div>
+
+            <div className="space-y-4 text-sm text-gray-300">
+              <div className="flex justify-between py-2 border-b border-neutral-900">
+                <span>Subtotal</span>
+                <span className="font-bold text-white">{currency}{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-neutral-900">
+                <span>Shipping Fee</span>
+                <span className="font-bold text-white">{currency}{shippingFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between py-2 text-base font-extrabold text-white">
+                <span>Total Amount</span>
+                <span className="text-[#ffc200] text-lg">{currency}{totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/place-order')}
+              className="w-full py-4 rounded-2xl bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-sm tracking-wider uppercase transition cursor-pointer shadow-[0_4px_20px_rgba(255,194,0,0.25)]"
+            >
+              PROCEED TO CHECKOUT
+            </button>
+          </div>
+
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default Cart
+export default Cart;

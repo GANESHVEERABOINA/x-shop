@@ -1,115 +1,125 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const Login = () => {
-
   const [currentState, setCurrentState] = useState('Login');
-  const { token, setToken, navigate, backendUrl } = useContext(ShopContext)
+  const { token, setToken, navigate, backendUrl } = useContext(ShopContext);
 
-  const [name,setName] = useState('')
-  const [password,setPassword] = useState('') // Fixed typo: setPasword -> setPassword
-  const [email,setEmail] = useState('')
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const onSubmitHandler = async (event) => {
-      event.preventDefault();
-      try {
-        if (currentState === 'Sign Up') {
-          
-          const response = await axios.post(backendUrl + '/api/user/register',{name,email,password})
-          if (response.data.success) {
-            setToken(response.data.token)
-            localStorage.setItem('token',response.data.token)
-          } else {
-            toast.error(response.data.message)
-          }
-
+    event.preventDefault();
+    try {
+      if (currentState === 'Sign Up') {
+        const response = await axios.post(backendUrl + '/api/user/register', { name, email, password });
+        if (response.data.success) {
+          setToken(response.data.token);
+          localStorage.setItem('token', response.data.token);
+          toast.success('Account created successfully!');
         } else {
-
-          const response = await axios.post(backendUrl + '/api/user/login', {email,password})
-          if (response.data.success) {
-            setToken(response.data.token)
-            localStorage.setItem('token',response.data.token)
-          } else {
-            toast.error(response.data.message)
-          }
-
+          toast.error(response.data.message);
         }
-
-      } catch (error) {
-        console.log(error)
-        toast.error(error.message)
+      } else {
+        const response = await axios.post(backendUrl + '/api/user/login', { email, password });
+        if (response.data.success) {
+          setToken(response.data.token);
+          localStorage.setItem('token', response.data.token);
+          toast.success('Logged in successfully!');
+        } else {
+          toast.error(response.data.message);
+        }
       }
-  }
-
-  useEffect(()=>{
-    if (token) {
-      navigate('/')
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
     }
-  },[token])
+  };
 
-  // --- Premium Input Styling Reusable Class ---
-  const inputStyle = 'w-full bg-black/20 border border-white/20 rounded-xl px-4 py-3.5 text-white placeholder-gray-400 focus:outline-none focus:border-white/60 focus:bg-white/10 transition-all duration-300';
+  useEffect(() => {
+    if (token) {
+      navigate('/');
+    }
+  }, [token]);
 
   return (
-    <div className='flex items-center justify-center min-h-[75vh] px-4'>
-      <form onSubmit={onSubmitHandler} className='flex flex-col items-center w-[90%] sm:max-w-md bg-white/5 backdrop-blur-xl border border-white/10 p-8 sm:p-10 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.5)]'>
-          
-          {/* Title Area */}
-          <div className='inline-flex items-center gap-2 mb-8'>
-              <p className='prata-regular text-3xl text-white font-medium tracking-wide'>{currentState}</p>
-              <hr className='border-none h-[2px] w-8 bg-white' />
-          </div>
-          
-          {/* Inputs Area */}
-          <div className='w-full flex flex-col gap-5'>
-            {currentState === 'Login' ? null : (
-              <input 
-                onChange={(e)=>setName(e.target.value)} 
-                value={name} 
-                type="text" 
-                className={inputStyle} 
-                placeholder='Name' 
-                required
-              />
-            )}
-            <input 
-              onChange={(e)=>setEmail(e.target.value)} 
-              value={email} 
-              type="email" 
-              className={inputStyle} 
-              placeholder='Email' 
-              required
-            />
-            <input 
-              onChange={(e)=>setPassword(e.target.value)} 
-              value={password} 
-              type="password" 
-              className={inputStyle} 
-              placeholder='Password' 
+    <form
+      onSubmit={onSubmitHandler}
+      className="flex flex-col items-center w-95 sm:max-w-md m-auto mt-12 sm:mt-16 gap-4 text-white pb-20 px-4"
+    >
+      {/* Header Title */}
+      <div className="inline-flex items-center gap-2 mb-2 mt-2">
+        <p className="prata-regular text-3xl sm:text-4xl font-extrabold tracking-wide uppercase text-white">
+          {currentState}
+        </p>
+        <hr className="border-none h-[3px] w-10 bg-[#ffc200] rounded-full" />
+      </div>
+
+      {/* Modern Card Container */}
+      <div className="w-full bg-[#111111] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-2xl">
+        {currentState === 'Sign Up' && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-bold text-gray-300 uppercase tracking-wider">Full Name</p>
+            <input
+              onChange={(e) => setName(e.target.value)}
+              value={name}
+              type="text"
+              className="w-full bg-black border border-neutral-700 rounded-2xl px-4 py-3 text-sm text-white focus:border-[#ffc200] outline-none transition"
+              placeholder="Full Name"
               required
             />
           </div>
+        )}
 
-          {/* Links Area */}
-          <div className='w-full flex justify-between text-sm mt-5 mb-8 text-gray-300 font-medium'>
-              <p className='cursor-pointer hover:text-white transition-colors'>Forgot your password?</p>
-              {
-                currentState === 'Login' 
-                ? <p onClick={()=>setCurrentState('Sign Up')} className='cursor-pointer hover:text-white transition-colors border-b border-transparent hover:border-white'>Create account</p>
-                : <p onClick={()=>setCurrentState('Login')} className='cursor-pointer hover:text-white transition-colors border-b border-transparent hover:border-white'>Login Here</p>
-              }
-          </div>
-          
-          {/* Submit Button */}
-          <button className='w-full bg-white text-black font-bold tracking-wide px-8 py-3.5 rounded-xl mt-2 hover:bg-gray-200 hover:scale-[1.02] transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.2)]'>
-            {currentState === 'Login' ? 'Sign In' : 'Sign Up'}
-          </button>
+        <div className="space-y-1.5">
+          <p className="text-xs font-bold text-gray-300 uppercase tracking-wider">Email Address</p>
+          <input
+            onChange={(e) => setEmail(e.target.value)}
+            value={email}
+            type="email"
+            className="w-full bg-black border border-neutral-700 rounded-2xl px-4 py-3 text-sm text-white focus:border-[#ffc200] outline-none transition"
+            placeholder="name@example.com"
+            required
+          />
+        </div>
 
-      </form>
-    </div>
-  )
-}
+        <div className="space-y-1.5">
+          <p className="text-xs font-bold text-gray-300 uppercase tracking-wider">Password</p>
+          <input
+            onChange={(e) => setPassword(e.target.value)}
+            value={password}
+            type="password"
+            className="w-full bg-black border border-neutral-700 rounded-2xl px-4 py-3 text-sm text-white focus:border-[#ffc200] outline-none transition"
+            placeholder="••••••••"
+            required
+          />
+        </div>
 
-export default Login
+        <div className="flex justify-between text-xs text-gray-400 pt-1">
+          <p className="cursor-pointer hover:text-[#ffc200] transition">Forgot your password?</p>
+          {currentState === 'Login' ? (
+            <p onClick={() => setCurrentState('Sign Up')} className="cursor-pointer text-[#ffc200] font-bold hover:underline">
+              Create account
+            </p>
+          ) : (
+            <p onClick={() => setCurrentState('Login')} className="cursor-pointer text-[#ffc200] font-bold hover:underline">
+              Login here
+            </p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="w-full mt-4 py-3.5 rounded-2xl bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-sm uppercase tracking-wider transition cursor-pointer shadow-[0_4px_20px_rgba(255,194,0,0.3)]"
+        >
+          {currentState === 'Login' ? 'Sign In' : 'Sign Up'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default Login;

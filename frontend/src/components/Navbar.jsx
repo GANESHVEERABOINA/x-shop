@@ -1,147 +1,189 @@
-import React, { useContext, useState } from "react";
-import { assets } from "../assets/assets";
-import { Link, NavLink } from "react-router-dom";
-import { ShopContext } from "../context/ShopContext";
+import React, { useContext, useState } from 'react';
+import { assets } from '../assets/assets';
+import { Link, NavLink } from 'react-router-dom';
+import { ShopContext } from '../context/ShopContext';
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
-
-  const {
-    setShowSearch,
-    getCartCount,
-    navigate,
-    token,
-    setToken,
-    setCartItems,
-  } = useContext(ShopContext);
+  const { setShowSearch, getCartCount, navigate, token, setToken, setCartItems, userData } = useContext(ShopContext);
 
   const logout = () => {
-    navigate("/login");
-    localStorage.removeItem("token");
-    setToken("");
+    navigate('/login');
+    localStorage.removeItem('token');
+    setToken('');
     setCartItems({});
   };
 
+  const defaultAddress = userData?.addresses?.[0] || null;
+  const rawName = userData?.name || userData?.username || 'Ganesh';
+  const displayName = rawName.toUpperCase();
+  const userInitial = rawName.charAt(0).toUpperCase();
+
   return (
-    <div className="flex items-center justify-between py-5 font-medium">
-      <Link to="/">
-        <img src={assets.logo} className="w-36" alt="" />
-      </Link>
+    <div className='w-full bg-black border-b border-neutral-800 sticky top-0 z-40 backdrop-blur-xl bg-opacity-95 mb-6'>
+      
+      {/* Top Address & Plus Bar (Full Width Stretch) */}
+      {token && userData && (
+        <div className='w-full flex items-center justify-between py-2 px-4 sm:px-8 lg:px-12 bg-[#0f0f0f] border-b border-neutral-900 text-xs text-gray-300'>
+          <div
+            onClick={() => navigate('/profile')}
+            className='flex items-center gap-2 cursor-pointer hover:text-white truncate'
+          >
+            <span className='text-[#ffc200] font-extrabold flex items-center gap-1'>
+              🏠 {defaultAddress?.type || 'HOME'}
+            </span>
+            {defaultAddress ? (
+              <span className='truncate max-w-[240px] sm:max-w-md text-gray-300'>
+                {defaultAddress.street}, {defaultAddress.city}, {defaultAddress.state} - {defaultAddress.zipcode} &gt;
+              </span>
+            ) : (
+              <span className='text-gray-400 underline'>
+                + Add your delivery address for fast checkout &gt;
+              </span>
+            )}
+          </div>
 
-      <ul className="hidden sm:flex gap-5 text-sm text-white-700">
-        <NavLink to="/" className="flex flex-col items-center gap-1">
-          <p>HOME</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-blue-700 hidden" />
-        </NavLink>
-        <NavLink to="/collection" className="flex flex-col items-center gap-1">
-          <p>COLLECTION</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-blue-700 hidden" />
-        </NavLink>
-        <NavLink to="/about" className="flex flex-col items-center gap-1">
-          <p>ABOUT</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-blue-700 hidden" />
-        </NavLink>
-        <NavLink to="/contact" className="flex flex-col items-center gap-1">
-          <p>CONTACT</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-blue-700 hidden" />
-        </NavLink>
-      </ul>
+          <div className='hidden sm:flex items-center gap-2 bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-full text-[11px] font-bold text-[#ffc200] shadow-sm'>
+            <span>⚡ X-Shop Plus Member</span>
+          </div>
+        </div>
+      )}
 
-      <div className="flex items-center gap-6">
-        <img
-          onClick={() => {
-            setShowSearch(true);
-            navigate("/collection");
-          }}
-          src={assets.search_icon}
-          className="w-5 cursor-pointer"
-          alt=""
-        />
+      {/* Main Header / Navbar (Full Width Stretch) */}
+      <div className='w-full flex items-center justify-between py-4 px-4 sm:px-8 lg:px-12 font-medium text-white'>
+        
+        {/* Brand Logo */}
+        <Link to='/' className='flex items-center gap-2.5 group'>
+          <div className='bg-[#ffc200] text-black font-extrabold px-2.5 py-1 rounded-lg text-lg tracking-wider shadow group-hover:scale-105 transition'>
+            X
+          </div>
+          <span className='text-lg sm:text-xl font-extrabold tracking-widest text-white'>
+            SHOP
+          </span>
+        </Link>
 
-        <div className="group relative">
+        {/* Modern Nav Links with Active Yellow Indicator */}
+        <ul className='hidden sm:flex gap-8 text-xs sm:text-sm font-bold tracking-wider text-gray-300'>
+          <NavLink to='/' className='flex flex-col items-center gap-1 hover:text-[#ffc200] transition'>
+            {({ isActive }) => (
+              <>
+                <p className={isActive ? 'text-[#ffc200]' : ''}>HOME</p>
+                <hr className={`w-full border-none h-[2px] bg-[#ffc200] transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`} />
+              </>
+            )}
+          </NavLink>
+          <NavLink to='/collection' className='flex flex-col items-center gap-1 hover:text-[#ffc200] transition'>
+            {({ isActive }) => (
+              <>
+                <p className={isActive ? 'text-[#ffc200]' : ''}>COLLECTION</p>
+                <hr className={`w-full border-none h-[2px] bg-[#ffc200] transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`} />
+              </>
+            )}
+          </NavLink>
+          <NavLink to='/about' className='flex flex-col items-center gap-1 hover:text-[#ffc200] transition'>
+            {({ isActive }) => (
+              <>
+                <p className={isActive ? 'text-[#ffc200]' : ''}>ABOUT</p>
+                <hr className={`w-full border-none h-[2px] bg-[#ffc200] transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`} />
+              </>
+            )}
+          </NavLink>
+          <NavLink to='/contact' className='flex flex-col items-center gap-1 hover:text-[#ffc200] transition'>
+            {({ isActive }) => (
+              <>
+                <p className={isActive ? 'text-[#ffc200]' : ''}>CONTACT</p>
+                <hr className={`w-full border-none h-[2px] bg-[#ffc200] transition-all duration-300 ${isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`} />
+              </>
+            )}
+          </NavLink>
+        </ul>
+
+        {/* Right Icons: Search, Profile, Cart, Mobile Menu */}
+        <div className='flex items-center gap-4 sm:gap-6'>
           <img
-            onClick={() => (token ? null : navigate("/login"))}
-            className="w-5 cursor-pointer"
-            src={assets.profile_icon}
-            alt=""
+            onClick={() => { setShowSearch(true); navigate('/collection') }}
+            src={assets.search_icon}
+            className='w-5 h-5 cursor-pointer invert hover:scale-110 transition'
+            alt="Search"
+            title="Search Products"
           />
-          {/* Dropdown Menu - Added z-50 here */}
-          {token && (
-            <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4 z-50">
-              <div className="flex flex-col gap-2 w-36 py-3 px-5  bg-slate-100 text-gray-500 rounded shadow-xl border border-gray-200">
-                <p
-                  onClick={() => navigate("/profile")}
-                  className="cursor-pointer hover:text-black"
-                >
-                  My Profile
-                </p>{" "}
-                <p
-                  onClick={() => navigate("/orders")}
-                  className="cursor-pointer hover:text-black"
-                >
-                  Orders
-                </p>
-                <p onClick={logout} className="cursor-pointer hover:text-black">
-                  Logout
-                </p>
+
+          {/* Profile Dropdown / Login Button */}
+          {token ? (
+            <div className='group relative'>
+              <div className='flex items-center gap-2 cursor-pointer bg-neutral-900 border border-neutral-800 hover:border-[#ffc200] px-3.5 py-1.5 rounded-xl transition shadow'>
+                <div className='w-7 h-7 rounded-full bg-[#ffc200] text-black font-extrabold flex items-center justify-center text-xs shadow shrink-0'>
+                  {userInitial}
+                </div>
+                <span className='text-xs font-bold text-white uppercase tracking-wide hidden sm:inline'>
+                  {displayName.split(' ')[0]}
+                </span>
+                <span className='text-[10px] text-gray-400'>▼</span>
+              </div>
+
+              {/* Dropdown Menu */}
+              <div className='group-hover:block hidden absolute dropdown-menu right-0 pt-3 z-50'>
+                <div className='flex flex-col gap-2 w-48 py-3 px-4 bg-[#141414] border border-neutral-700 text-gray-300 rounded-2xl shadow-2xl text-xs font-semibold'>
+                  <p onClick={() => navigate('/profile')} className='cursor-pointer hover:text-[#ffc200] py-1.5 border-b border-neutral-800'>
+                    👤 My Profile
+                  </p>
+                  <p onClick={() => navigate('/wishlist')} className='cursor-pointer hover:text-[#ffc200] py-1.5 border-b border-neutral-800'>
+                    ❤️ My Wishlist
+                  </p>
+                  <p onClick={() => navigate('/orders')} className='cursor-pointer hover:text-[#ffc200] py-1.5 border-b border-neutral-800'>
+                    📦 My Orders
+                  </p>
+                  <p onClick={logout} className='cursor-pointer hover:text-red-400 py-1.5'>
+                    🚪 Logout
+                  </p>
+                </div>
               </div>
             </div>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className='bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-xs px-5 py-2 rounded-xl transition shadow cursor-pointer uppercase tracking-wider'
+            >
+              Login
+            </button>
           )}
+
+          {/* Cart Button */}
+          <Link
+            to='/cart'
+            className='relative flex items-center gap-2 px-3.5 py-2 bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold rounded-xl transition shadow-lg cursor-pointer'
+            title="View Shopping Cart"
+          >
+            <img src={assets.cart_icon} className='w-5 h-5 filter brightness-0' alt="Cart" />
+            <span className='text-xs hidden sm:inline'>Cart</span>
+            <span className='absolute -right-2 -top-2 w-5 h-5 flex items-center justify-center bg-black text-[#ffc200] font-extrabold rounded-full text-[10px] shadow border border-[#ffc200]'>
+              {getCartCount()}
+            </span>
+          </Link>
+
+          {/* Mobile Menu Icon */}
+          <img
+            onClick={() => setVisible(true)}
+            src={assets.menu_icon}
+            className='w-5 h-5 cursor-pointer sm:hidden invert'
+            alt="Menu"
+          />
         </div>
-        <Link to="/cart" className="relative">
-          <img src={assets.cart_icon} className="w-5 min-w-5" alt="" />
-          <p className="absolute right-[-5px] bottom-[-5px] w-4 text-center leading-4 bg-black text-white aspect-square rounded-full text-[8px]">
-            {getCartCount()}
-          </p>
-        </Link>
-        <img
-          onClick={() => setVisible(true)}
-          src={assets.menu_icon}
-          className="w-5 cursor-pointer sm:hidden"
-          alt=""
-        />
       </div>
 
-      {/* Sidebar menu for small screens - Added z-50 here as well */}
-      <div
-        className={`absolute top-0 right-0 bottom-0 overflow-hidden bg-white transition-all z-50 ${visible ? "w-full" : "w-0"}`}
-      >
-        <div className="flex flex-col text-gray-600">
-          <div
-            onClick={() => setVisible(false)}
-            className="flex items-center gap-4 p-3 cursor-pointer"
-          >
-            <img className="h-4 rotate-180" src={assets.dropdown_icon} alt="" />
-            <p>Back</p>
+      {/* Mobile Drawer */}
+      <div className={`fixed top-0 right-0 bottom-0 overflow-hidden bg-black z-50 transition-all ${visible ? 'w-full' : 'w-0'}`}>
+        <div className='flex flex-col text-gray-300 p-6 space-y-4'>
+          <div onClick={() => setVisible(false)} className='flex items-center gap-4 cursor-pointer pb-4 border-b border-neutral-800'>
+            <img className='h-4 rotate-180 invert' src={assets.dropdown_icon} alt="" />
+            <p className='text-white font-bold'>Close Menu</p>
           </div>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border"
-            to="/"
-          >
-            HOME
-          </NavLink>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border"
-            to="/collection"
-          >
-            COLLECTION
-          </NavLink>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border"
-            to="/about"
-          >
-            ABOUT
-          </NavLink>
-          <NavLink
-            onClick={() => setVisible(false)}
-            className="py-2 pl-6 border"
-            to="/contact"
-          >
-            CONTACT
-          </NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-3 text-lg font-bold border-b border-neutral-900' to='/'>HOME</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-3 text-lg font-bold border-b border-neutral-900' to='/collection'>COLLECTION</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-3 text-lg font-bold border-b border-neutral-900' to='/orders'>MY ORDERS</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-3 text-lg font-bold border-b border-neutral-900' to='/profile'>MY PROFILE</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-3 text-lg font-bold border-b border-neutral-900' to='/about'>ABOUT</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-3 text-lg font-bold border-b border-neutral-900' to='/contact'>CONTACT</NavLink>
         </div>
       </div>
     </div>

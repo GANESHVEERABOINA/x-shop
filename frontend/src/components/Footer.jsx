@@ -1,116 +1,76 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { assets } from "../assets/assets";
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
-  const [email, setEmail] = useState("");
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Newsletter signup:", email);
-    // Ikkada future lo backend API add chesukovachu
-    setEmail("");
-  };
-
   return (
-    <footer className="w-full mt-20 sm:mt-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="w-full bg-[#09090b] border-t border-neutral-800 text-white mt-16 pt-16 pb-12 px-4 sm:px-8 md:px-12">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-12">
         
-        {/* Main Footer Content */}
-        <div className="py-12 border-t border-white/10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Left Side: Newsletter */}
-            <div className="lg:col-span-2">
-              <h3 className="text-2xl font-bold text-white mb-4">
-                Stay Updated
-              </h3>
-              <p className="text-gray-400 mb-6 max-w-lg leading-relaxed">
-                Get the latest updates, tips, and exclusive content delivered
-                straight to your inbox. Join our newsletter and never miss
-                important announcements.
-              </p>
-
-              <form
-                onSubmit={handleSubmit}
-                className="flex flex-col sm:flex-row gap-3 max-w-md"
-              >
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="flex-1 px-4 py-3 border border-white/20 rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white focus:border-white transition-all"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-white text-black font-bold tracking-wider rounded-lg transition-colors duration-200 hover:bg-gray-200 active:scale-95"
-                >
-                  SUBSCRIBE
-                </button>
-              </form>
-
-              <p className="text-xs text-gray-500 mt-3">
-                We respect your privacy. Unsubscribe at any time.
-              </p>
+        {/* Col 1: Brand Info */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="bg-[#ffc200] text-black font-extrabold px-2.5 py-1 rounded text-base tracking-wider shadow">
+              X
             </div>
-
-            {/* Right Side: Quick Links */}
-            <div>
-              <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4">
-                Quick Links
-              </h4>
-              <ul className="space-y-3">
-                <li>
-                  <Link to="/" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/collection" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    Collection
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/contact" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    Contact Center
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            
+            <span className="text-lg font-extrabold tracking-widest text-white">
+              SHOP
+            </span>
           </div>
+          <p className="text-xs text-gray-400 leading-relaxed">
+            X-Shop is your ultimate destination for high-end fashion, clothing, and lifestyle products, powered by secure cloud architecture.
+          </p>
         </div>
 
-        {/* Bottom Bar: Copyright & Policies */}
-        <div className="py-6 border-t border-white/10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} X-Shop. All rights reserved.
-            </p>
-            <div className="flex gap-6">
-              <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">
-                Terms
-              </a>
-              <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">
-                Cookies
-              </a>
-            </div>
+        {/* Col 2: Company */}
+        <div className="space-y-3">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[#ffc200]">
+            COMPANY
+          </p>
+          <ul className="flex flex-col gap-2.5 text-xs text-gray-300">
+            <li><Link to="/" className="hover:text-[#ffc200] transition">Home</Link></li>
+            <li><Link to="/about" className="hover:text-[#ffc200] transition">About Us</Link></li>
+            <li><Link to="/collection" className="hover:text-[#ffc200] transition">Delivery & Collection</Link></li>
+            <li><Link to="/contact" className="hover:text-[#ffc200] transition">Contact Center</Link></li>
+          </ul>
+        </div>
+
+        {/* Col 3: Get in Touch */}
+        <div className="space-y-3">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[#ffc200]">
+            GET IN TOUCH
+          </p>
+          <ul className="flex flex-col gap-2.5 text-xs text-gray-300">
+            <li>📞 +91 (40) 555-0132</li>
+            <li>✉️ support@xshop.com</li>
+            <li>📍 Hyderabad, India</li>
+          </ul>
+        </div>
+
+        {/* Col 4: X-Shop Plus */}
+        <div className="space-y-3">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[#ffc200]">
+            X-SHOP PLUS
+          </p>
+          <p className="text-xs text-gray-400 leading-relaxed">
+            Subscribe to get instant alerts on flash sales and exclusive voucher codes.
+          </p>
+          <div className="inline-block bg-neutral-900 border border-neutral-700 text-[#ffc200] text-[10px] font-extrabold px-3 py-1 rounded-lg uppercase">
+            ⚡ SECURE CLOUD STORE
           </div>
         </div>
 
       </div>
+
+      <div className="max-w-7xl mx-auto border-t border-neutral-800/80 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
+        <p>© 2026 X-Shop. All rights reserved.</p>
+        <div className="flex gap-6">
+          <span className="hover:text-[#ffc200] cursor-pointer transition">Privacy Policy</span>
+          <span className="hover:text-[#ffc200] cursor-pointer transition">Terms of Service</span>
+          <span className="hover:text-[#ffc200] cursor-pointer transition">Cookie Preferences</span>
+        </div>
+      </div>
     </footer>
   );
-}
+};
 
 export default Footer;

@@ -2,142 +2,205 @@ import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
 const Dashboard = ({ token }) => {
   const [orders, setOrders] = useState([])
-  const [productsCount, setProductsCount] = useState(0)
+  const [products, setProducts] = useState([])
 
-  const fetchData = async () => {
+  const fetchDashboardData = async () => {
     if (!token) return;
     try {
       const orderRes = await axios.post(backendUrl + '/api/order/list', {}, { headers: { token } })
       if (orderRes.data.success) {
         setOrders(orderRes.data.orders)
+      } else {
+        toast.error(orderRes.data.message)
       }
+
       const prodRes = await axios.get(backendUrl + '/api/product/list')
       if (prodRes.data.success) {
-        setProductsCount(prodRes.data.products.length)
+        setProducts(prodRes.data.products)
       }
     } catch (error) {
+      console.log(error)
       toast.error(error.message)
     }
   }
 
   useEffect(() => {
-    fetchData();
+    fetchDashboardData()
   }, [token])
 
-  // --- STATS CALCULATIONS ---
-  const totalRevenue = orders.reduce((sum, order) => order.payment ? sum + order.amount : sum, 0);
-  const totalOrders = orders.length;
-  const deliveredOrders = orders.filter(o => o.status === 'Delivered').length;
-  
-  // Bar Chart Data (Orders Status)
-  const statusCounts = { 'Order Placed': 0, 'Packing': 0, 'Shipped': 0, 'Out for delivery': 0, 'Delivered': 0 };
-  orders.forEach(o => {
-    if (statusCounts[o.status] !== undefined) statusCounts[o.status]++;
-  });
-  
-  const barData = Object.keys(statusCounts).map(key => ({
-    name: key.replace('Order Placed', 'Placed').replace('Out for delivery', 'Out'), 
-    count: statusCounts[key]
-  }));
+  // Real Calculations from MongoDB Database
+  const totalRevenue = orders.reduce((acc, curr) => {
+    // If order is not cancelled, count its amount towards revenue
+    if (curr.status !== 'Cancelled') {
+      return acc + Number(curr.amount || 0);
+    }
+    return acc;
+  }, 0);
 
-  // Line Chart Data (Revenue)
-  const lineData = [...orders].reverse().slice(-10).map(o => ({
-    date: new Date(o.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-    amount: o.amount
-  }));
+  const totalOrdersCount = orders.length;
+  const deliveredCount = orders.filter(o => o.status === 'Delivered').length;
+  const pendingCount = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').length;
+  const cancelledCount = orders.filter(o => o.status === 'Cancelled').length;
+  const totalProductsCount = products.length;
 
   return (
-    <div className='text-white w-full max-w-7xl pb-10'>
+    <div className='p-4 sm:p-8 text-white w-full space-y-8 max-w-7xl mx-auto'>
       
-      {/* Top Header like Smart Home */}
-      <div className='flex justify-between items-center mb-8 bg-[#1C1C24] p-4 rounded-full border border-white/5 shadow-md'>
-          <input 
-            type="text" 
-            placeholder="Search orders, products..." 
-            className="bg-transparent border-none outline-none text-sm text-white px-4 w-full md:w-[300px] placeholder-gray-500"
-          />
-          <div className='flex gap-3 items-center pr-2'>
-            <div className='w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-xs shadow-[0_0_10px_rgba(147,51,234,0.5)]'>JR</div>
-          </div>
+      {/* Top Header */}
+      <div className='flex items-center justify-between border-b border-neutral-800 pb-4'>
+        <div>
+          <h1 className='text-xl sm:text-2xl font-extrabold tracking-wide uppercase text-white'>
+            X-SHOP <span className='text-[#ffc200]'>ADMIN DASHBOARD</span>
+          </h1>
+          <p className='text-xs text-gray-400 mt-1'>Live monitoring connected directly to MongoDB Atlas database</p>
+        </div>
+        <button
+          onClick={fetchDashboardData}
+          className='bg-[#141414] border border-neutral-700 hover:border-[#ffc200] text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer text-white shadow'
+        >
+          🔄 Refresh Live Stats
+        </button>
       </div>
 
-      <h3 className='text-2xl font-bold tracking-wide mb-6 text-white'>Overview</h3>
-
-      {/* --- STATS CARDS (Premium Dark Mode) --- */}
-      <div className='grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8'>
+      {/* Real Stats Cards Grid */}
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5'>
         
-        <div className='bg-[#1C1C24] border border-white/5 rounded-[2rem] p-6 shadow-xl hover:shadow-purple-900/20 transition-all duration-300'>
-          <p className='text-gray-400 text-xs sm:text-sm font-semibold tracking-widest mb-1'>Total Revenue</p>
-          <p className='text-2xl sm:text-4xl font-bold text-white'>{currency}{totalRevenue}</p>
-          <p className='text-purple-400 text-xs mt-3'>+12% this month</p>
+        {/* Revenue */}
+        <div className='bg-[#111111] border border-neutral-800 rounded-3xl p-6 shadow-xl space-y-2 relative overflow-hidden'>
+          <div className='absolute -right-3 -bottom-3 text-6xl opacity-5'>💰</div>
+          <p className='text-xs font-bold tracking-wider text-gray-400 uppercase'>Total Store Revenue</p>
+          <h3 className='text-2xl sm:text-3xl font-extrabold text-[#ffc200]'>
+            {currency}{totalRevenue.toLocaleString('en-IN')}
+          </h3>
+          <p className='text-[11px] text-emerald-400 font-semibold'>Real-time aggregated sales</p>
         </div>
 
-        <div className='bg-[#1C1C24] border border-white/5 rounded-[2rem] p-6 shadow-xl hover:shadow-purple-900/20 transition-all duration-300'>
-          <p className='text-gray-400 text-xs sm:text-sm font-semibold tracking-widest mb-1'>Total Orders</p>
-          <p className='text-2xl sm:text-4xl font-bold text-white'>{totalOrders}</p>
-          <p className='text-purple-400 text-xs mt-3'>Active deliveries</p>
+        {/* Total Orders */}
+        <div className='bg-[#111111] border border-neutral-800 rounded-3xl p-6 shadow-xl space-y-2 relative overflow-hidden'>
+          <div className='absolute -right-3 -bottom-3 text-6xl opacity-5'>📦</div>
+          <p className='text-xs font-bold tracking-wider text-gray-400 uppercase'>Total Orders Placed</p>
+          <h3 className='text-2xl sm:text-3xl font-extrabold text-white'>
+            {totalOrdersCount}
+          </h3>
+          <p className='text-[11px] text-[#ffc200] font-semibold'>Active customer orders</p>
         </div>
 
-        <div className='bg-[#1C1C24] border border-white/5 rounded-[2rem] p-6 shadow-xl hover:shadow-purple-900/20 transition-all duration-300'>
-          <p className='text-gray-400 text-xs sm:text-sm font-semibold tracking-widest mb-1'>Delivered</p>
-          <p className='text-2xl sm:text-4xl font-bold text-white'>{deliveredOrders}</p>
-          <p className='text-purple-400 text-xs mt-3'>Successfully completed</p>
+        {/* Delivered Orders */}
+        <div className='bg-[#111111] border border-neutral-800 rounded-3xl p-6 shadow-xl space-y-2 relative overflow-hidden'>
+          <div className='absolute -right-3 -bottom-3 text-6xl opacity-5'>🚚</div>
+          <p className='text-xs font-bold tracking-wider text-gray-400 uppercase'>Successfully Delivered</p>
+          <h3 className='text-2xl sm:text-3xl font-extrabold text-emerald-400'>
+            {deliveredCount}
+          </h3>
+          <p className='text-[11px] text-gray-400 font-semibold'>Completed deliveries</p>
         </div>
 
-        <div className='bg-[#1C1C24] border border-white/5 rounded-[2rem] p-6 shadow-xl hover:shadow-purple-900/20 transition-all duration-300'>
-          <p className='text-gray-400 text-xs sm:text-sm font-semibold tracking-widest mb-1'>Total Products</p>
-          <p className='text-2xl sm:text-4xl font-bold text-white'>{productsCount}</p>
-          <p className='text-purple-400 text-xs mt-3'>In inventory</p>
+        {/* Total Products */}
+        <div className='bg-[#111111] border border-neutral-800 rounded-3xl p-6 shadow-xl space-y-2 relative overflow-hidden'>
+          <div className='absolute -right-3 -bottom-3 text-6xl opacity-5'>🏷️</div>
+          <p className='text-xs font-bold tracking-wider text-gray-400 uppercase'>Inventory Products</p>
+          <h3 className='text-2xl sm:text-3xl font-extrabold text-white'>
+            {totalProductsCount}
+          </h3>
+          <p className='text-[11px] text-[#ffc200] font-semibold'>Active catalog items</p>
         </div>
 
       </div>
 
-      {/* --- CHARTS SECTION --- */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+      {/* Analytics & Breakdown Section */}
+      <div className='grid grid-cols-1 lg:grid-cols-12 gap-6 items-start'>
         
-        {/* Line Chart */}
-        <div className='bg-[#1C1C24] border border-white/5 rounded-[2rem] p-6 shadow-xl'>
-          <p className='text-white text-base font-bold tracking-wide mb-6'>Revenue Analytics</p>
-          <div className='h-[280px] w-full'>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="date" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#13131A', border: 'none', borderRadius: '15px', color: '#fff' }}
-                  itemStyle={{ color: '#a855f7' }}
-                />
-                <Line type="monotone" dataKey="amount" stroke="#a855f7" strokeWidth={4} dot={{ r: 0 }} activeDot={{ r: 6, fill: '#fff', stroke: '#a855f7', strokeWidth: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+        {/* Left: Store Performance Bars */}
+        <div className='lg:col-span-7 bg-[#111111] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl'>
+          <div className='flex items-center justify-between'>
+            <h4 className='text-sm sm:text-base font-bold text-white uppercase tracking-wider'>
+              Store Order Performance
+            </h4>
+            <span className='bg-neutral-900 border border-neutral-700 text-[#ffc200] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase'>
+              Live DB Stats
+            </span>
+          </div>
+
+          <div className='h-52 flex items-end gap-4 pt-6 border-b border-neutral-800 px-2'>
+            <div className='w-full bg-neutral-900 hover:bg-[#ffc200] h-[40%] rounded-t-xl transition flex flex-col items-center justify-start pt-2 text-[10px] font-bold text-gray-400 hover:text-black group'>
+              <span>{pendingCount}</span>
+            </div>
+            <div className='w-full bg-neutral-900 hover:bg-[#ffc200] h-[70%] rounded-t-xl transition flex flex-col items-center justify-start pt-2 text-[10px] font-bold text-gray-400 hover:text-black'>
+              <span>{deliveredCount}</span>
+            </div>
+            <div className='w-full bg-neutral-900 hover:bg-[#ffc200] h-[30%] rounded-t-xl transition flex flex-col items-center justify-start pt-2 text-[10px] font-bold text-gray-400 hover:text-black'>
+              <span>{cancelledCount}</span>
+            </div>
+            <div className='w-full bg-[#ffc200] h-[90%] rounded-t-xl transition flex flex-col items-center justify-start pt-2 text-[10px] font-extrabold text-black shadow-[0_0_15px_rgba(255,194,0,0.3)]'>
+              <span>{totalOrdersCount}</span>
+            </div>
+          </div>
+          
+          <div className='flex justify-around text-xs font-bold text-gray-400'>
+            <span>Processing</span>
+            <span>Delivered</span>
+            <span>Cancelled</span>
+            <span className='text-[#ffc200]'>Total Orders</span>
           </div>
         </div>
 
-        {/* Bar Chart */}
-        <div className='bg-[#1C1C24] border border-white/5 rounded-[2rem] p-6 shadow-xl'>
-          <p className='text-white text-base font-bold tracking-wide mb-6'>Order Statistics</p>
-          <div className='h-[280px] w-full'>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#13131A', border: 'none', borderRadius: '15px', color: '#fff' }}
-                  cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                />
-                <Bar dataKey="count" fill="#a855f7" radius={[6, 6, 6, 6]} barSize={25} />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Right: Order Status Distribution Bars */}
+        <div className='lg:col-span-5 bg-[#111111] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl'>
+          <h4 className='text-sm sm:text-base font-bold text-white uppercase tracking-wider'>
+            Order Status Distribution
+          </h4>
+
+          <div className='space-y-4 text-xs font-semibold'>
+            <div>
+              <div className='flex justify-between mb-1.5 text-gray-300'>
+                <span>Delivered Successfully</span>
+                <span className='text-emerald-400 font-bold'>{deliveredCount} Orders</span>
+              </div>
+              <div className='w-full bg-neutral-900 h-2.5 rounded-full overflow-hidden border border-neutral-800'>
+                <div
+                  className='bg-emerald-500 h-full transition-all duration-500'
+                  style={{ width: `${totalOrdersCount ? (deliveredCount / totalOrdersCount) * 100 : 0}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div>
+              <div className='flex justify-between mb-1.5 text-gray-300'>
+                <span>Pending / Processing</span>
+                <span className='text-[#ffc200] font-bold'>{pendingCount} Orders</span>
+              </div>
+              <div className='w-full bg-neutral-900 h-2.5 rounded-full overflow-hidden border border-neutral-800'>
+                <div
+                  className='bg-[#ffc200] h-full transition-all duration-500'
+                  style={{ width: `${totalOrdersCount ? (pendingCount / totalOrdersCount) * 100 : 0}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div>
+              <div className='flex justify-between mb-1.5 text-gray-300'>
+                <span>Cancelled Orders</span>
+                <span className='text-red-400 font-bold'>{cancelledCount} Orders</span>
+              </div>
+              <div className='w-full bg-neutral-900 h-2.5 rounded-full overflow-hidden border border-neutral-800'>
+                <div
+                  className='bg-red-500 h-full transition-all duration-500'
+                  style={{ width: `${totalOrdersCount ? (cancelledCount / totalOrdersCount) * 100 : 0}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className='bg-black/60 border border-neutral-800 rounded-2xl p-4 text-center text-xs text-gray-400'>
+            🔒 Verified X-Shop Secure Admin Node
           </div>
         </div>
 
       </div>
+
     </div>
   )
 }

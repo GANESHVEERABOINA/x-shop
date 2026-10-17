@@ -1,58 +1,64 @@
-import React from 'react'
-import Title from '../components/Title'
-import { assets } from '../assets/assets'
-import NewsletterBox from '../components/NewsletterBox'
+import React from 'react';
+import Title from '../components/Title';
+import NewsletterBox from '../components/NewsletterBox';
 
 const Contact = () => {
   return (
-    <div>
-      
-      <div className='text-center text-2xl pt-10 border-t border-white/10'>
+    <div className="text-white space-y-12 pt-6 pb-16 max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="text-center">
+        <span className="bg-neutral-900 border border-neutral-700 text-[#ffc200] text-[11px] font-bold px-3.5 py-1 rounded-full tracking-wider uppercase">
+          📞 GET IN TOUCH
+        </span>
+        <div className="mt-2">
           <Title text1={'CONTACT'} text2={'US'} />
-      </div>
-
-      <div className='my-16 flex flex-col justify-center md:flex-row gap-12 mb-28 items-center'>
-        
-        {/* Contact Image with rounded corners and subtle shadow */}
-        <img 
-          className='w-full md:max-w-[480px] rounded-3xl shadow-[0_0_30px_rgba(255,255,255,0.05)]' 
-          src={assets.contact_img} 
-          alt="Contact Us" 
-        />
-        
-        {/* Glassmorphism Card for Contact Information */}
-        <div className='bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 sm:p-12 shadow-2xl flex flex-col justify-center items-start gap-6 w-full md:w-1/2'>
-          
-          <div className='w-full'>
-            <p className='font-semibold text-lg sm:text-xl text-white tracking-widest uppercase mb-4'>Our Store</p>
-            <p className='text-gray-400 leading-relaxed'>
-              Hyderabad <br /> Charminar, Hyderabad, Telangana, India
-            </p>
-            <p className='text-gray-400 leading-relaxed mt-3'>
-              Tel: (415) 555-0132 <br /> Email: contactxshop@gmail.com
-            </p>
-          </div>
-
-          {/* Divider inside the card */}
-          <hr className='w-full border-white/10 my-2' />
-
-          <div className='w-full'>
-            <p className='font-semibold text-lg sm:text-xl text-white tracking-widest uppercase mb-4'>Careers at Dreams Clothing</p>
-            <p className='text-gray-400 leading-relaxed mb-8'>
-              Learn more about our teams and job openings.
-            </p>
-            {/* Premium Button */}
-            <button className='bg-white text-black font-semibold text-sm tracking-wide px-10 py-4 rounded-full hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-in-out shadow-lg'>
-              Explore Jobs
-            </button>
-          </div>
-
         </div>
       </div>
 
-      <NewsletterBox/>
-    </div>
-  )
-}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-[#111111] border border-neutral-800 p-6 sm:p-10 rounded-3xl shadow-2xl">
+        <div className="md:col-span-5 relative aspect-[4/3] rounded-2xl overflow-hidden border border-neutral-700">
+          <img
+            src="https://images.unsplash.com/photo-1534536281715-e28d76689b4d?q=80&w=1000&auto=format&fit=crop"
+            alt="Contact Support"
+            className="w-full h-full object-cover hover:scale-105 transition duration-500"
+          />
+        </div>
 
-export default Contact
+        <div className="md:col-span-7 space-y-6">
+          <div className="bg-black/60 border border-neutral-800 p-6 rounded-2xl space-y-3">
+            <h3 className="text-sm font-extrabold text-[#ffc200] uppercase tracking-wider">
+              OUR STORE HEADQUARTERS
+            </h3>
+            <p className="text-sm text-gray-300">
+              Hitech City Road, Madhapur, Hyderabad, Telangana, India - 500081
+            </p>
+            <p className="text-sm text-gray-300">
+              Tel: <strong className="text-white">+91 (40) 555-0132</strong>
+            </p>
+            <p className="text-sm text-gray-300">
+              Email: <strong className="text-[#ffc200]">support@xshop.com</strong>
+            </p>
+          </div>
+
+          <div className="bg-black/60 border border-neutral-800 p-6 rounded-2xl space-y-3">
+            <h3 className="text-sm font-extrabold text-[#ffc200] uppercase tracking-wider">
+              CAREERS AT X-SHOP
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-400">
+              Want to build the future of cloud e-commerce with us? Explore our open engineering & DevOps roles.
+            </p>
+            <button
+              onClick={() => alert('No current openings. Send resume to hr@xshop.com')}
+              className="bg-[#ffc200] hover:bg-[#ffcf33] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl transition cursor-pointer"
+            >
+              Explore Careers
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <NewsletterBox />
+    </div>
+  );
+};
+
+export default Contact;

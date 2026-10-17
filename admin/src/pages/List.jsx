@@ -1,119 +1,92 @@
-import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
 
 const List = ({ token }) => {
-
-  const [list, setList] = useState([])
-  const [editingId, setEditingId] = useState(null)
-  const [editPrice, setEditPrice] = useState("")
+  const [list, setList] = useState([]);
 
   const fetchList = async () => {
     try {
-      const response = await axios.get(backendUrl + '/api/product/list')
+      const response = await axios.get(backendUrl + '/api/product/list');
       if (response.data.success) {
-        setList(response.data.products.reverse());
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
-  }
-
-  const removeProduct = async (id) => {
-    try {
-      const response = await axios.post(backendUrl + '/api/product/remove', { id }, { headers: { token } })
-      if (response.data.success) {
-        toast.success(response.data.message)
-        await fetchList();
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error(error.message)
-    }
-  }
-
-  // --- REAL DB UPDATE FUNCTION ---
-  const updatePrice = async (id) => {
-    try {
-      // Direct ga Database ki request pampistunnam
-      const response = await axios.post(backendUrl + '/api/product/update', { id, price: Number(editPrice) }, { headers: { token } });
-      
-      if (response.data.success) {
-        // DB lo success ayyaka UI update chestunnam
-        setList(prevList => prevList.map(item => item._id === id ? { ...item, price: Number(editPrice) } : item));
-        setEditingId(null);
-        toast.success("Price updated in Database!");
+        setList(response.data.products);
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
       console.log(error);
-      toast.error("Failed to update price in Database.");
+      toast.error(error.message);
+    }
+  }
+
+  const removeProduct = async (id) => {
+    try {
+      const response = await axios.post(backendUrl + '/api/product/remove', { id }, { headers: { token } });
+      if (response.data.success) {
+        toast.success("Product removed successfully!");
+        await fetchList();
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
     }
   }
 
   useEffect(() => {
-    fetchList()
-  }, [])
+    fetchList();
+  }, []);
 
   return (
-    <div className='text-white w-full max-w-6xl'>
-      <p className='mb-6 text-xl font-semibold tracking-wider text-gray-200'>All Products List</p>
-      
-      <div className='flex flex-col gap-4'>
-        <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-3.5 px-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl text-sm font-semibold text-gray-300 tracking-widest shadow-lg'>
-          <span>Image</span>
-          <span>Name</span>
-          <span>Category</span>
-          <span>Price</span>
-          <span className='text-center'>Action</span>
-        </div>
+    <div className='p-4 sm:p-6 text-white w-full space-y-6 max-w-7xl mx-auto'>
+      <div className='flex items-center justify-between border-b border-neutral-800 pb-4'>
+        <h3 className='text-xl font-extrabold uppercase tracking-wide text-white'>
+          All Products Inventory <span className='text-[#ffc200]'>({list.length})</span>
+        </h3>
+      </div>
 
-        {
-          list.map((item, index) => (
-            <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-4 py-4 px-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl text-sm text-gray-200 hover:bg-white/10 transition-all duration-300 shadow-md' key={index}>
-              <img className='w-14 h-14 object-cover rounded-xl border border-white/10 shadow-sm' src={item.image[0]} alt="" />
-              <p className='font-medium text-white truncate pr-2'>{item.name}</p>
-              <p className='text-gray-400'>{item.category}</p>
+      {/* Table Header for Desktop */}
+      <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-3 px-5 bg-[#141414] border border-neutral-800 rounded-2xl text-xs font-extrabold text-gray-400 uppercase tracking-wider'>
+        <span>Image</span>
+        <span>Product Name</span>
+        <span>Category</span>
+        <span>Price</span>
+        <span className='text-center'>Action</span>
+      </div>
+
+      {/* Product List Cards */}
+      <div className='space-y-3'>
+        {list.map((item, index) => {
+          const imgUrl = Array.isArray(item.image) ? item.image[0] : item.image;
+          return (
+            <div
+              key={index}
+              className='grid grid-cols-2 sm:grid-cols-4 md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-4 py-4 px-5 bg-[#111111] border border-neutral-800 hover:border-neutral-700 rounded-2xl shadow-lg transition'
+            >
+              <img className='w-14 h-16 object-cover rounded-xl border border-neutral-700' src={imgUrl} alt={item.name} />
               
-              {/* Editable Price Section */}
-              <div className='flex items-center'>
-                {editingId === item._id ? (
-                  <div className='flex items-center gap-2'>
-                    <span className='font-bold text-white'>{currency}</span>
-                    <input 
-                      type="number" 
-                      value={editPrice}
-                      onChange={(e) => setEditPrice(e.target.value)}
-                      className='w-16 bg-black/50 border border-white/30 rounded px-1.5 py-1 text-white text-sm focus:outline-none focus:border-green-400'
-                      autoFocus
-                    />
-                    <button onClick={() => updatePrice(item._id)} className='text-green-400 font-bold hover:scale-125 transition-transform'>✓</button>
-                    <button onClick={() => setEditingId(null)} className='text-red-400 font-bold hover:scale-125 transition-transform'>✕</button>
-                  </div>
-                ) : (
-                  <div className='flex items-center gap-2 group cursor-pointer w-max' onClick={() => { setEditingId(item._id); setEditPrice(item.price); }}>
-                    <p className='font-bold text-white'>{currency}{item.price}</p>
-                    <span className='opacity-0 group-hover:opacity-100 text-[10px] bg-white/10 px-2 py-0.5 rounded transition-all'>✏️ Edit</span>
-                  </div>
-                )}
+              <div className='space-y-1 col-span-2 sm:col-span-1 md:col-span-1'>
+                <p className='font-bold text-white text-sm sm:text-base line-clamp-1'>{item.name}</p>
+                <p className='text-xs text-gray-400'>ID: {item._id.slice(-6)}</p>
               </div>
 
-              <div className='text-right md:text-center'>
-                 <button onClick={()=>removeProduct(item._id)} className='bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition-all duration-300 cursor-pointer'>
-                    DELETE
-                 </button>
+              <p className='text-xs sm:text-sm font-semibold text-gray-300'>{item.category}</p>
+              
+              <p className='text-sm sm:text-base font-extrabold text-[#ffc200]'>{currency}{item.price}</p>
+              
+              <div className='flex justify-center'>
+                <button
+                  onClick={() => removeProduct(item._id)}
+                  className='bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer shadow'
+                >
+                  Delete
+                </button>
               </div>
             </div>
-          ))
-        }
-
+          );
+        })}
       </div>
     </div>
   )

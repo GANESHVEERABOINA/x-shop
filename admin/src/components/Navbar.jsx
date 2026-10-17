@@ -1,25 +1,30 @@
 import React from 'react'
+import { assets } from '../assets/assets'
 
-const Navbar = ({setToken}) => {
+const Navbar = ({ setToken }) => {
   return (
-    <div className='flex items-center py-4 px-[4%] justify-between bg-black/40 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 shadow-md'>
-        
-        {/* Text Logo */}
-        <div className='flex items-baseline gap-2 cursor-default'>
-            <h1 className='text-2xl font-bold text-white tracking-widest uppercase'>
-              X-SHOP
-            </h1>
-            <span className='text-xs sm:text-sm font-semibold text-gray-400 tracking-widest uppercase hidden sm:block'>
-              Admin Panel
-            </span>
+    <div className='flex items-center justify-between py-3 px-4 sm:px-8 bg-[#0d0d0d] border-b border-neutral-800 text-white'>
+      <div className='flex items-center gap-2'>
+        <div className='bg-[#ffc200] text-black font-extrabold px-2.5 py-1 rounded text-sm tracking-wider'>
+          X
         </div>
+        <span className='text-base sm:text-lg font-extrabold tracking-widest text-white'>
+          SHOP <span className='text-xs font-normal text-gray-400 ml-1'>ADMIN PANEL</span>
+        </span>
+      </div>
 
-        <button 
-          onClick={()=>setToken('')} 
-          className='bg-white/10 hover:bg-white/25 text-white border border-white/20 px-6 py-2 sm:px-8 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold tracking-wider transition-all duration-300 shadow-sm'
+      <div className='flex items-center gap-3'>
+        <div className='hidden sm:flex items-center gap-2 bg-neutral-900 border border-neutral-700 px-3 py-1.5 rounded-full text-xs font-bold text-[#ffc200]'>
+          <span>👑 Authorized Admin</span>
+        </div>
+        
+        <button
+          onClick={() => setToken('')}
+          className='bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white px-5 py-2 rounded-full text-xs font-bold transition cursor-pointer shadow'
         >
           Logout
         </button>
+      </div>
     </div>
   )
 }
