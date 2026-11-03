@@ -19,7 +19,7 @@ spec:
             - containerPort: 80
           env: 
           - name: REACT_APP_BACKEND_URL
-            value: "http://16.112.180.201:30002/"
+            value: "" # Backedn NodeIp with PortNubmer
           resources:
             requests:
               cpu: "100m"
