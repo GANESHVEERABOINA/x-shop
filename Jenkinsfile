@@ -9,14 +9,14 @@ pipeline {
     stages {
         stage('Git Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/GANESHVEERABOINA/x-shop.git'
+                git branch: 'main', url: 'https://github.com/ganeshveeraboina/x-shop.git'
             }
         }
         
         stage('Terraform Init & Plan') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
-                    dir('terraform') { 
+                    dir('terraform') {
                         sh 'terraform init'
                         sh 'terraform plan'
                     }
