@@ -9,22 +9,17 @@ pipeline {
     stages {
         stage('Git Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/GANESHVEERABOINA/x-shop.git'
+                git branch: 'main', url: 'https://github.com/ganeshveeraboina/YOUR_REPO_NAME.git'
             }
         }
         
-        stage('Terraform Init') {
+        stage('Terraform Init & Plan') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
-                    sh 'terraform init'
-                }
-            }
-        }
-        
-        stage('Terraform Plan') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
-                    sh 'terraform plan'
+                    dir('terraform') { 
+                        sh 'terraform init'
+                        sh 'terraform plan'
+                    }
                 }
             }
         }
@@ -32,7 +27,9 @@ pipeline {
         stage('Terraform Apply / Destroy') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
-                    sh 'terraform ${ACTION} -auto-approve'
+                    dir('terraform') {
+                        sh 'terraform ${ACTION} -auto-approve'
+                    }
                 }
             }
         }
