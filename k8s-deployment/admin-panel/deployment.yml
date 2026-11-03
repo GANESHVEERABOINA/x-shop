@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: admin
+  template:
+    metadata:
+      labels:
+        app: admin
+    spec:
+      containers:
+        - name: admin-container
+          image: ganeshveeraboina/x-shop-three-tire-app:admin-v3
+          ports:
+            - containerPort: 80
+          env: 
+          - name: REACT_APP_BACKEND_URL
+            value: "http://16.112.180.201:30002/"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+
+
+
