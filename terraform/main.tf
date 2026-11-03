@@ -1,5 +1,5 @@
 provider "aws" {
-  region = var.aws_region
+  region = "ap-south-2"
 }
 
 data "aws_ami" "ubuntu" {
