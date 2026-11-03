@@ -14,9 +14,9 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_instance" "k3s_master" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  key_name               = var.key_name
-  vpc_security_group_ids = [var.security_group_id]
+  instance_type          = "t3.medium"
+  key_name               = "agents-jenkins"
+  vpc_security_group_ids = ["sg-04b51a64d308eb338"]
 
   root_block_device {
     volume_size = 20
@@ -32,9 +32,9 @@ resource "aws_instance" "k3s_master" {
 resource "aws_instance" "k3s_workers" {
   count                  = 2
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  key_name               = var.key_name
-  vpc_security_group_ids = [var.security_group_id]
+  instance_type          = "t3.medium"
+  key_name               = "agents-jenkins"
+  vpc_security_group_ids = ["sg-04b51a64d308eb338"]
 
   root_block_device {
     volume_size = 20
@@ -45,4 +45,11 @@ resource "aws_instance" "k3s_workers" {
     Name = "k3s-worker-${count.index + 1}"
     Role = "worker"
   }
+}
+
+output "master_public_ip" {
+  value = aws_instance.k3s_master.public_ip
+}
+output "worker_public_ips" {
+  value = aws_instance.k3s_workers[*].public_ip
 }
