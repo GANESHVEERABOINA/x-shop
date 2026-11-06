@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: ganeshveeraboina/x-shop-three-tire-app:frontend-v6
+          image: ganeshveeraboina/x-shop-three-tire-app:frontend-v6 #updated version
           ports:
             - containerPort: 80
           env: 
