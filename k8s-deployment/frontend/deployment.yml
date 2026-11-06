@@ -14,12 +14,12 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: ganeshveeraboina/x-shop-three-tire-app:frontend
+          image: ganeshveeraboina/x-shop-three-tire-app:frontend-v6
           ports:
             - containerPort: 80
           env: 
           - name: REACT_APP_BACKEND_URL
-            value: "http://#backend ip/api/"
+            value: "http://localhost/api/"
           resources:
             requests:
               cpu: "100m"
